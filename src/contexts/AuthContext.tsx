@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -12,15 +11,15 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 
-// Firebase configuration (users will need to add their own config)
+// Firebase configuration
 const firebaseConfig = {
-  // This would be replaced with actual Firebase config
-  apiKey: "demo-key",
-  authDomain: "sketchmentor-demo.firebaseapp.com",
-  projectId: "sketchmentor-demo",
-  storageBucket: "sketchmentor-demo.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "demo-app-id"
+  apiKey: "AIzaSyCFqHwNqGk0Utiq2umPZ9hKny2ZnVNuci4",
+  authDomain: "sketchmentor-6ec65.firebaseapp.com",
+  projectId: "sketchmentor-6ec65",
+  storageBucket: "sketchmentor-6ec65.firebasestorage.app",
+  messagingSenderId: "984767234188",
+  appId: "1:984767234188:web:7185264863e5d6eb3d3ba9",
+  measurementId: "G-5LQ0VJCPGH"
 };
 
 // Initialize Firebase
