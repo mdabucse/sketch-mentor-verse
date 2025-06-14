@@ -1,10 +1,12 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { Image, Eraser, RotateCcw, Wand2, Copy, Pencil, Circle, Square, Minus, Play } from 'lucide-react';
+import { Image, Eraser, RotateCcw, Wand2, Copy, Pencil, Circle, Square, Minus, Play, Palette } from 'lucide-react';
+import { toast } from 'sonner';
 import axios from 'axios';
 
 const CanvasAI = () => {
@@ -18,6 +20,13 @@ const CanvasAI = () => {
   const [activeTool, setActiveTool] = useState('free');
   const [responseText, setResponseText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Predefined colors for quick selection
+  const presetColors = [
+    '#ffffff', '#ff0000', '#00ff00', '#0000ff',
+    '#ffff00', '#ff00ff', '#00ffff', '#ffa500',
+    '#800080', '#ffc0cb', '#a52a2a', '#808080'
+  ];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -312,32 +321,92 @@ const CanvasAI = () => {
                     </Button>
                   </div>
 
-                  {/* Canvas Controls */}
-                  <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm font-medium">Size:</label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="20"
-                        value={lineWidth}
-                        onChange={(e) => setLineWidth(Number(e.target.value))}
-                        className="w-24"
+                  {/* Enhanced Canvas Controls */}
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    {/* Pencil Size Control */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Pencil Size</label>
+                        <span className="text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-2 py-1 rounded">
+                          {lineWidth}px
+                        </span>
+                      </div>
+                      <Slider
+                        value={[lineWidth]}
+                        onValueChange={(value) => setLineWidth(value[0])}
+                        min={1}
+                        max={20}
+                        step={1}
+                        className="w-full"
                       />
-                      <span className="text-sm text-gray-600 dark:text-gray-400 w-8">
-                        {lineWidth}
-                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm font-medium">Color:</label>
-                      <input
-                        type="color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        disabled={isErasing}
-                        className="w-12 h-8 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
-                      />
+                    {/* Color Controls */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Colors</label>
+                      <div className="flex items-center gap-2">
+                        {/* Color Picker */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={isErasing}
+                              className="w-10 h-10 p-0 border-2"
+                              style={{ backgroundColor: color }}
+                            >
+                              <Palette className="h-4 w-4" style={{ color: color === '#ffffff' ? '#000000' : '#ffffff' }} />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-3">
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-xs font-medium mb-2 block">Custom Color</label>
+                                <input
+                                  type="color"
+                                  value={color}
+                                  onChange={(e) => setColor(e.target.value)}
+                                  className="w-full h-8 rounded border border-gray-300 dark:border-gray-600"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium mb-2 block">Preset Colors</label>
+                                <div className="grid grid-cols-4 gap-1">
+                                  {presetColors.map((presetColor) => (
+                                    <button
+                                      key={presetColor}
+                                      onClick={() => setColor(presetColor)}
+                                      className={`w-8 h-8 rounded border-2 ${
+                                        color === presetColor 
+                                          ? 'border-blue-500 ring-2 ring-blue-200' 
+                                          : 'border-gray-300 dark:border-gray-600'
+                                      }`}
+                                      style={{ backgroundColor: presetColor }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Quick Color Buttons */}
+                        <div className="flex gap-1">
+                          {presetColors.slice(0, 6).map((presetColor) => (
+                            <button
+                              key={presetColor}
+                              onClick={() => setColor(presetColor)}
+                              disabled={isErasing}
+                              className={`w-6 h-6 rounded border ${
+                                color === presetColor 
+                                  ? 'border-blue-500 ring-1 ring-blue-300' 
+                                  : 'border-gray-300 dark:border-gray-600'
+                              } disabled:opacity-50`}
+                              style={{ backgroundColor: presetColor }}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -364,7 +433,10 @@ const CanvasAI = () => {
                       className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                     >
                       {isProcessing ? (
-                        <>Processing...</>
+                        <>
+                          <Wand2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
                       ) : (
                         <>
                           <Play className="h-4 w-4 mr-2" />

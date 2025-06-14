@@ -1,150 +1,138 @@
-
-import React, { useState, useEffect, useRef } from 'react';
-import Sidebar from '../components/Sidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useRef, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Play, Send, MessageCircle, User, Bot, Menu, X, Plus } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
+import { motion } from 'framer-motion';
+import { Youtube, Download, FileText, MessageSquare, Send, Menu, X, User, Bot } from 'lucide-react';
+import { toast } from 'sonner';
 import axios from 'axios';
-
-interface ChatMessage {
-  id: string;
-  type: 'user' | 'bot';
-  content: string;
-  timestamp: Date;
-}
-
-interface Chat {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-}
 
 const YouTubeTranscriber = () => {
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [videoId, setVideoId] = useState('');
   const [transcription, setTranscription] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // Chat management states
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [currentChat, setCurrentChat] = useState<Chat | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  
+  // Chat functionality states
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
   const [chatName, setChatName] = useState('');
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [currentChat, setCurrentChat] = useState(null);
+  const [showChatSidebar, setShowChatSidebar] = useState(false);
   const [error, setError] = useState('');
 
-  const API_BASE = "https://srt9mmrf-5000.inc1.devtunnels.ms";
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const API_BASE = 'https://srt9mmrf-5000.inc1.devtunnels.ms';
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     if (!currentChat && chats.length === 0) {
       fetchChatNames();
-      startNewChatWithDefaultName();
     }
   }, [currentChat, chats]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  // Extract video ID from YouTube URL
-  const extractVideoId = (url: string) => {
-    const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-  };
-
-  const handleLoadVideo = () => {
-    const id = extractVideoId(youtubeUrl);
-    if (id) {
-      setVideoId(id);
-      setLoading(true);
-      setTimeout(() => {
-        setTranscription(
-          "This is a sample transcription of the YouTube video. In a real implementation, you would use a service like YouTube's API or a third-party transcription service to get the actual transcript.\n\n" +
-          "The video discusses various topics and provides valuable insights. The speaker talks about different concepts and explains them in detail.\n\n" +
-          "You can now chat with the bot about this content using the chat interface on the right."
-        );
-        setLoading(false);
-      }, 2000);
-    } else {
-      alert('Please enter a valid YouTube URL');
-    }
-  };
-
-  // Chat management functions
   const fetchChatNames = async () => {
     try {
       const response = await axios.get(`${API_BASE}/chat_history`);
       const chatList = response.data.chat_names;
-      setChats(chatList.map((chatTitle: string) => ({
+      setChats(chatList.map((chatTitle) => ({
         id: Date.now() + Math.random(),
         title: chatTitle,
         messages: []
       })));
     } catch (err) {
-      console.error("Error fetching chat names:", err);
-      setError("Failed to fetch chat names.");
+      console.error('Error fetching chat names:', err.message);
+      setError('Failed to fetch chat names.');
     }
   };
 
-  const startNewChatWithDefaultName = () => {
-    const defaultChatName = `Video Chat ${chats.length + 1}`;
-    const newChat: Chat = { 
-      id: Date.now().toString(), 
-      title: defaultChatName, 
-      messages: [] 
-    };
-    setChats([...chats, newChat]);
-    setCurrentChat(newChat);
-    setChatMessages([]);
+  const sendMessage = async () => {
+    if (inputText.trim() === '') return;
+
+    const userMessage = inputText;
+    setInputText('');
+
+    try {
+      let chat = currentChat;
+
+      if (!chat) {
+        const defaultChatName = `Chat ${chats.length + 1}`;
+        const response = await axios.post(
+          `${API_BASE}/chat_create`,
+          { chat_name: defaultChatName },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        chat = { id: response.data.response, title: defaultChatName, messages: [] };
+        setChats([...chats, chat]);
+        setCurrentChat(chat);
+      }
+
+      const updatedMessages = [...(chat.messages || []), { text: userMessage, type: 'user' }];
+      setMessages(updatedMessages);
+
+      const chatResponse = await axios.post(
+        `${API_BASE}/chat`,
+        { chat_name: chat.title, message: userMessage },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      const botReply = { text: chatResponse.data.response, type: 'bot' };
+      const finalMessages = [...updatedMessages, botReply];
+
+      setMessages(finalMessages);
+      setChats(chats.map((c) => (c.id === chat.id ? { ...c, messages: finalMessages } : c)));
+      setCurrentChat({ ...chat, messages: finalMessages });
+
+    } catch (err) {
+      console.error('Error in sending message:', err.response ? err.response.data : err.message);
+      setError(err.response?.data?.message || 'Failed to send message.');
+    }
   };
 
-  const selectChat = async (chat: Chat) => {
+  const selectChat = async (chat) => {
     setCurrentChat(chat);
     setChatName(chat.title);
-    setError("");
+    setError('');
 
     if (chat.messages.length > 0) {
-      setChatMessages(chat.messages);
+      setMessages(chat.messages);
     } else {
       try {
         const response = await axios.post(`${API_BASE}/chat_resume`, {
           chat_name: chat.title
         });
 
-        const fetchedMessages: ChatMessage[] = [];
-        
+        const fetchedMessages = [];
+
         for (let i = 0; i < response.data.response.length; i++) {
           const userMessage = response.data.response[i].human;
           const botMessage = response.data.response[i].AI;
 
           if (userMessage) {
             fetchedMessages.push({
-              id: `user-${i}`,
-              type: "user",
-              content: userMessage,
-              timestamp: new Date(response.data.response[i].timestamp)
+              text: userMessage,
+              type: 'user',
+              timestamp: response.data.response[i].timestamp
             });
           }
           
           if (botMessage) {
             fetchedMessages.push({
-              id: `bot-${i}`,
-              type: "bot", 
-              content: botMessage,
-              timestamp: new Date(response.data.response[i].timestamp)
+              text: botMessage,
+              type: 'bot',
+              timestamp: response.data.response[i].timestamp
             });
           }
         }
 
-        setChatMessages(fetchedMessages);
-        
+        setMessages(fetchedMessages);
+
         const updatedChat = { ...chat, messages: fetchedMessages };
         setChats((prevChats) =>
           prevChats.map((prevChat) =>
@@ -152,330 +140,220 @@ const YouTubeTranscriber = () => {
           )
         );
       } catch (err) {
-        console.error("Error fetching chat messages:", err);
-        setError("Failed to fetch chat messages.");
+        console.error('Error fetching chat messages:', err.message);
+        setError('Failed to fetch chat messages.');
       }
     }
   };
 
-  const startNewChat = async () => {
-    if (chatName.trim() === "") {
-      setError("Chat name cannot be empty.");
+  const handleTranscribe = async () => {
+    if (!youtubeUrl.trim()) {
+      toast.error('Please enter a valid YouTube URL');
       return;
     }
 
-    if (chats.some((chat) => chat.title === chatName)) {
-      setError("Chat name already exists.");
-      return;
-    }
+    setIsTranscribing(true);
+    setTranscription('');
 
     try {
-      const response = await axios.post(
-        `${API_BASE}/chat_create`,
-        { chat_name: chatName },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: youtubeUrl }),
+      });
 
-      const newChat: Chat = { 
-        id: response.data.response, 
-        title: chatName, 
-        messages: [] 
-      };
-      setChats([...chats, newChat]);
-      setCurrentChat(newChat);
-      setChatMessages([]);
-      setChatName("");
-      setError("");
-      setShowSidebar(false);
-    } catch (err: any) {
-      console.error("Error creating chat:", err.response ? err.response.data : err.message);
-      setError(err.response?.data?.message || "Failed to create chat.");
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!chatInput.trim()) return;
-
-    const userMessage = chatInput;
-    setInputText("");
-
-    try {
-      let chat = currentChat;
-
-      if (!chat) {
-        const defaultChatName = `Video Chat ${chats.length + 1}`;
-        const response = await axios.post(
-          `${API_BASE}/chat_create`,
-          { chat_name: defaultChatName },
-          { headers: { "Content-Type": "application/json" } }
-        );
-
-        chat = { 
-          id: response.data.response, 
-          title: defaultChatName, 
-          messages: [] 
-        };
-        setChats([...chats, chat]);
-        setCurrentChat(chat);
+      if (!response.ok) {
+        throw new Error('Failed to transcribe video');
       }
 
-      const userMsg: ChatMessage = {
-        id: Date.now().toString(),
-        type: 'user',
-        content: userMessage,
-        timestamp: new Date()
-      };
-
-      const updatedMessages = [...(chat.messages || []), userMsg];
-      setChatMessages(updatedMessages);
-
-      // Add transcription context to the message
-      const contextualMessage = transcription 
-        ? `Based on this video transcription: "${transcription.substring(0, 500)}..." \n\nUser question: ${userMessage}`
-        : userMessage;
-
-      const chatResponse = await axios.post(
-        `${API_BASE}/chat`,
-        { chat_name: chat.title, message: contextualMessage },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      const botMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: chatResponse.data.response,
-        timestamp: new Date()
-      };
-
-      const finalMessages = [...updatedMessages, botMsg];
-      setChatMessages(finalMessages);
-      setChats(chats.map((c) => (c.id === chat.id ? { ...c, messages: finalMessages } : c)));
-      setCurrentChat({ ...chat, messages: finalMessages });
-
-    } catch (err: any) {
-      console.error("Error in sending message:", err.response ? err.response.data : err.message);
-      setError(err.response?.data?.message || "Failed to send message.");
+      const data = await response.json();
+      setTranscription(data.transcription);
+      toast.success('Video transcribed successfully!');
+    } catch (error) {
+      console.error('Error transcribing video:', error);
+      toast.error('Failed to transcribe video. Please try again.');
+    } finally {
+      setIsTranscribing(false);
     }
-
-    setChatInput('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  const handleDownload = () => {
+    if (transcription) {
+      const blob = new Blob([transcription], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'transcription.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full p-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-            YouTube Transcriber
-          </h1>
-          
-          {/* URL Input */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="h-5 w-5" />
-                YouTube Video URL
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <Input
-                  placeholder="Paste YouTube URL here..."
-                  value={youtubeUrl}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleLoadVideo} disabled={loading}>
-                  {loading ? 'Loading...' : 'Load Video'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      
+      <div className="flex-1 flex">
+        <div className="flex-1 overflow-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-8"
+          >
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
+                <Youtube className="h-8 w-8 mr-3 text-red-600" />
+                YouTube Transcriber
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Extract transcripts from YouTube videos and chat about the content with AI.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-            {/* Left Column - Video and Transcription */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Video Player */}
-              {videoId && (
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="aspect-video">
-                      <iframe
-                        src={`https://www.youtube.com/embed/${videoId}`}
-                        className="w-full h-full rounded"
-                        allowFullScreen
-                        title="YouTube video player"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Transcription */}
-              <Card className="flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Video Input */}
+              <Card className="bg-white dark:bg-gray-800">
                 <CardHeader>
-                  <CardTitle>Transcription</CardTitle>
+                  <CardTitle>Video URL</CardTitle>
+                  <CardDescription>
+                    Enter the YouTube video URL you want to transcribe
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-64 lg:h-80">
-                    {loading ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-gray-500">Loading transcription...</div>
+                  <div className="space-y-4">
+                    <Input
+                      value={youtubeUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                    <Button 
+                      onClick={handleTranscribe} 
+                      disabled={isTranscribing || !youtubeUrl.trim()}
+                      className="w-full"
+                    >
+                      {isTranscribing ? (
+                        <>
+                          <FileText className="h-4 w-4 mr-2 animate-spin" />
+                          Transcribing...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Transcribe Video
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Transcription Output */}
+              <Card className="bg-white dark:bg-gray-800">
+                <CardHeader>
+                  <CardTitle>Transcription</CardTitle>
+                  <CardDescription>
+                    The extracted text from the video will appear here
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isTranscribing ? (
+                    <div className="flex items-center justify-center h-64">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Transcribing video...
+                        </p>
                       </div>
-                    ) : transcription ? (
-                      <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                        {transcription}
+                    </div>
+                  ) : transcription ? (
+                    <div className="space-y-4">
+                      <Textarea
+                        value={transcription}
+                        readOnly
+                        className="min-h-[200px]"
+                      />
+                      <Button variant="outline" className="w-full" onClick={handleDownload}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Transcription
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-64">
+                      <div className="text-center">
+                        <Youtube className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Enter a YouTube URL and click transcribe to get started
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-500">
-                        Load a YouTube video to see its transcription
-                      </div>
-                    )}
-                  </ScrollArea>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
+          </motion.div>
+        </div>
 
-            {/* Right Column - Enhanced Chat Bot */}
-            <Card className="flex flex-col relative">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  Chat Assistant
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSidebar(true)}
-                >
-                  <Menu className="h-4 w-4" />
+        {/* Chat Sidebar */}
+        <div className={`${showChatSidebar ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700`}>
+          <div className="h-full flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">AI Chat</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowChatSidebar(false)}>
+                  <X className="h-4 w-4" />
                 </Button>
-              </CardHeader>
+              </div>
+            </div>
 
-              {/* Chat Sidebar */}
-              {showSidebar && (
-                <div className="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800 z-10 p-4 border-r">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Chat History</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowSidebar(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Input
-                        placeholder="Enter chat name..."
-                        value={chatName}
-                        onChange={(e) => setChatName(e.target.value)}
-                        className="mb-2"
-                      />
-                      <Button onClick={startNewChat} className="w-full" size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Chat
-                      </Button>
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-4">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`flex items-start space-x-2 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {msg.type === 'bot' && <Bot className="h-6 w-6 mt-1 text-blue-600" />}
+                    <div className={`max-w-[80%] p-3 rounded-lg ${
+                      msg.type === 'user' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                    }`}>
+                      <p className="text-sm">{msg.text}</p>
                     </div>
-
-                    {error && (
-                      <div className="text-red-500 text-sm">{error}</div>
-                    )}
-
-                    <ScrollArea className="h-64">
-                      <div className="space-y-2">
-                        {chats.map((chat) => (
-                          <div
-                            key={chat.id}
-                            className={`p-2 rounded cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                              currentChat?.id === chat.id ? 'bg-purple-100 dark:bg-purple-900/20' : ''
-                            }`}
-                            onClick={() => {
-                              selectChat(chat);
-                              setShowSidebar(false);
-                            }}
-                          >
-                            {chat.title}
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                    {msg.type === 'user' && <User className="h-6 w-6 mt-1 text-gray-600" />}
                   </div>
-                </div>
-              )}
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+            </div>
 
-              <CardContent className="flex-1 flex flex-col p-4 gap-4">
-                {/* Chat Messages */}
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-4">
-                    {chatMessages.length === 0 ? (
-                      <div className="text-center text-gray-500 text-sm">
-                        Start chatting about the video content!
-                      </div>
-                    ) : (
-                      chatMessages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex items-start gap-2 ${
-                            message.type === 'user' ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          {message.type === 'bot' && (
-                            <Bot className="h-6 w-6 text-purple-600 mt-1" />
-                          )}
-                          <div
-                            className={`max-w-[80%] p-3 rounded-lg text-sm ${
-                              message.type === 'user'
-                                ? 'bg-purple-600 text-white'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                            }`}
-                          >
-                            {message.content}
-                          </div>
-                          {message.type === 'user' && (
-                            <User className="h-6 w-6 text-blue-600 mt-1" />
-                          )}
-                        </div>
-                      ))
-                    )}
-                    <div ref={chatEndRef} />
-                  </div>
-                </ScrollArea>
-
-                <Separator />
-
-                {/* Chat Input */}
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Ask about the video content..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="flex-1 min-h-[40px] max-h-[100px] resize-none"
-                    disabled={!transcription && !currentChat}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!chatInput.trim()}
-                    size="sm"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex space-x-2">
+                <Input
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Ask about the video..."
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                />
+                <Button onClick={sendMessage} size="sm">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Floating Chat Button */}
+      {!showChatSidebar && (
+        <Button
+          onClick={() => setShowChatSidebar(true)}
+          className="fixed bottom-6 right-6 rounded-full w-12 h-12 bg-blue-600 hover:bg-blue-700"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 };
