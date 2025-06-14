@@ -1,38 +1,23 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initializeApp, getApps } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
+import { createClient } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCFqHwNqGk0Utiq2umPZ9hKny2ZnVNuci4",
-  authDomain: "sketchmentor-6ec65.firebaseapp.com",
-  projectId: "sketchmentor-6ec65",
-  storageBucket: "sketchmentor-6ec65.firebasestorage.app",
-  messagingSenderId: "984767234188",
-  appId: "1:984767234188:web:7185264863e5d6eb3d3ba9",
-  measurementId: "G-5LQ0VJCPGH"
-};
+// Supabase configuration
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Initialize Firebase only if no apps exist
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface AuthContextType {
   currentUser: User | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -47,40 +32,94 @@ export const useAuth = () => {
   return context;
 };
 
+// Activity tracking functions
+export const trackUserActivity = async (userId: string, activity: string, details?: any) => {
+  try {
+    const { error } = await supabase
+      .from('user_activities')
+      .insert({
+        user_id: userId,
+        activity_type: activity,
+        details: details || {},
+        timestamp: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error('Error tracking activity:', error);
+    }
+  } catch (err) {
+    console.error('Failed to track activity:', err);
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    
+    // Track login activity
+    if (data.user) {
+      await trackUserActivity(data.user.id, 'login');
+    }
   };
 
   const register = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-  };
-
-  const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+    
+    // Track registration activity
+    if (data.user) {
+      await trackUserActivity(data.user.id, 'registration');
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    // Track logout activity before signing out
+    if (currentUser) {
+      await trackUserActivity(currentUser.id, 'logout');
+    }
+    
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return unsubscribe;
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const value = {
     currentUser,
+    session,
     login,
     register,
-    loginWithGoogle,
     logout,
     loading
   };

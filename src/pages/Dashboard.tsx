@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,9 +5,24 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { Video, BarChart, FileText, Image, Plus, Clock, BookOpen, Youtube } from 'lucide-react';
+import { useActivityTracker } from '../hooks/useActivityTracker';
+import { useEffect } from 'react';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
+  const { trackPageView, trackFeatureUsage } = useActivityTracker();
+
+  useEffect(() => {
+    // Track dashboard page view
+    trackPageView('Dashboard');
+  }, []);
+
+  const handleFeatureClick = async (featureName: string, href: string) => {
+    await trackFeatureUsage('dashboard', 'feature_accessed', {
+      feature_name: featureName,
+      destination: href
+    });
+  };
 
   const features = [
     {
@@ -109,7 +123,10 @@ const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Link to={feature.href}>
+                <Link 
+                  to={feature.href}
+                  onClick={() => handleFeatureClick(feature.title, feature.href)}
+                >
                   <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group bg-white dark:bg-gray-800">
                     <CardHeader className="pb-3">
                       <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
