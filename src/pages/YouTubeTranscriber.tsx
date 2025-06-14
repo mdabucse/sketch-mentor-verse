@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { motion } from 'framer-motion';
 import { Youtube, Download, FileText, MessageSquare, Send, Menu, X, User, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { useActivityTracker } from '../hooks/useActivityTracker';
 
 const YouTubeTranscriber = () => {
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -26,12 +26,6 @@ const YouTubeTranscriber = () => {
 
   const API_BASE = 'https://srt9mmrf-5000.inc1.devtunnels.ms';
   const chatEndRef = useRef(null);
-  const { trackPageView, trackTranscription, trackChatInteraction, trackFeatureUsage } = useActivityTracker();
-
-  useEffect(() => {
-    // Track page view when component mounts
-    trackPageView('YouTube Transcriber');
-  }, []);
 
   useEffect(() => {
     if (!currentChat && chats.length === 0) {
@@ -95,9 +89,6 @@ const YouTubeTranscriber = () => {
       setMessages(finalMessages);
       setChats(chats.map((c) => (c.id === chat.id ? { ...c, messages: finalMessages } : c)));
       setCurrentChat({ ...chat, messages: finalMessages });
-
-      // Track chat interaction
-      await trackChatInteraction(chat.title, finalMessages.length);
 
     } catch (err) {
       console.error('Error in sending message:', err.response ? err.response.data : err.message);
@@ -165,9 +156,6 @@ const YouTubeTranscriber = () => {
     setIsTranscribing(true);
     setTranscription('');
 
-    // Track transcription start
-    await trackTranscription('started', youtubeUrl);
-
     try {
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -184,20 +172,10 @@ const YouTubeTranscriber = () => {
       const data = await response.json();
       setTranscription(data.transcription);
       toast.success('Video transcribed successfully!');
-      
-      // Track successful transcription
-      await trackTranscription('completed', youtubeUrl);
-      await trackFeatureUsage('youtube_transcriber', 'transcription_completed', {
-        video_url: youtubeUrl,
-        transcription_length: data.transcription.length
-      });
 
     } catch (error) {
       console.error('Error transcribing video:', error);
       toast.error('Failed to transcribe video. Please try again.');
-      
-      // Track failed transcription
-      await trackTranscription('failed', youtubeUrl);
     } finally {
       setIsTranscribing(false);
     }
@@ -214,11 +192,6 @@ const YouTubeTranscriber = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
-      // Track download activity
-      await trackFeatureUsage('youtube_transcriber', 'transcription_downloaded', {
-        transcription_length: transcription.length
-      });
     }
   };
 
