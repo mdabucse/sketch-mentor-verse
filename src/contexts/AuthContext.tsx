@@ -26,8 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const loginWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result;
+    await signInWithPopup(auth, googleProvider);
   };
 
   const logout = async () => {
