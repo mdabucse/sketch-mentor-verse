@@ -37,10 +37,19 @@ const SignIn = () => {
         description: "Successfully signed in!",
       });
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error:', error);
+      let errorMessage = "Failed to sign in. Please check your credentials.";
+      
+      if (error.message.includes('Email not confirmed')) {
+        errorMessage = "Please check your email and click the confirmation link before signing in.";
+      } else if (error.message.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please try again.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to sign in. Please check your credentials.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -56,11 +65,11 @@ const SignIn = () => {
         title: "Success",
         description: "Successfully signed in with Google!",
       });
-      navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Google login error:', error);
       toast({
         title: "Error",
-        description: "Failed to sign in with Google.",
+        description: error.message || "Failed to sign in with Google.",
         variant: "destructive"
       });
     } finally {

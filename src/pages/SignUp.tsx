@@ -53,13 +53,14 @@ const SignUp = () => {
       await register(email, password);
       toast({
         title: "Success",
-        description: "Account created successfully!",
+        description: "Account created successfully! Please check your email to confirm your account.",
       });
-      navigate('/dashboard');
-    } catch (error) {
+      navigate('/signin');
+    } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -75,11 +76,11 @@ const SignUp = () => {
         title: "Success",
         description: "Account created successfully with Google!",
       });
-      navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Google signup error:', error);
       toast({
         title: "Error",
-        description: "Failed to create account with Google.",
+        description: error.message || "Failed to create account with Google.",
         variant: "destructive"
       });
     } finally {
