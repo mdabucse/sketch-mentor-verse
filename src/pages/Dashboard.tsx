@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { Video, BarChart, FileText, Image, Plus, Clock, BookOpen } from 'lucide-react';
+import { Video, BarChart, FileText, Image, Plus, Clock, BookOpen, Youtube } from 'lucide-react';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -42,6 +42,14 @@ const Dashboard = () => {
       href: '/canvas-ai',
       color: 'from-purple-500 to-indigo-500',
       recent: 'Never used'
+    },
+    {
+      title: 'YouTube Transcriber',
+      description: 'Transcribe and chat with YouTube videos',
+      icon: Youtube,
+      href: '/youtube-transcriber',
+      color: 'from-orange-500 to-red-500',
+      recent: 'Never used'
     }
   ];
 
@@ -51,6 +59,12 @@ const Dashboard = () => {
       title: 'Linear Algebra Visualization',
       time: '2 hours ago',
       status: 'Completed'
+    },
+    {
+      type: 'youtube',
+      title: 'Khan Academy: Calculus Basics',
+      time: '5 hours ago',
+      status: 'Transcribed'
     },
     {
       type: 'document',
@@ -87,7 +101,7 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -146,6 +160,8 @@ const Dashboard = () => {
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           activity.status === 'Completed' 
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : activity.status === 'Transcribed'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                             : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         }`}>
                           {activity.status}
@@ -178,6 +194,10 @@ const Dashboard = () => {
                     <div className="flex items-center text-sm">
                       <Plus className="h-4 w-4 mr-2" />
                       Create your first video with our Video Generator
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Transcribe a YouTube video and chat about it
                     </div>
                     <div className="flex items-center text-sm">
                       <Plus className="h-4 w-4 mr-2" />
