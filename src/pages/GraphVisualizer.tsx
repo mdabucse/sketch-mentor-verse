@@ -4,25 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { BarChart, Settings, Plus, Trash2 } from 'lucide-react';
+import { BarChart, Settings, RefreshCw } from 'lucide-react';
 
 const GraphVisualizer = () => {
-  const [functions, setFunctions] = useState(['y = sin(x)']);
-  const [is3D, setIs3D] = useState(false);
-  const [newFunction, setNewFunction] = useState('');
+  const [equation, setEquation] = useState('y = sin(x)');
 
-  const addFunction = () => {
-    if (newFunction.trim()) {
-      setFunctions([...functions, newFunction]);
-      setNewFunction('');
-    }
-  };
-
-  const removeFunction = (index: number) => {
-    setFunctions(functions.filter((_, i) => i !== index));
+  const updateGraph = () => {
+    // Logic to update the graph with the new equation
+    console.log('Updating graph with equation:', equation);
   };
 
   return (
@@ -38,10 +29,10 @@ const GraphVisualizer = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
               <BarChart className="h-8 w-8 mr-3 text-blue-600" />
-              Graph Visualizer
+              2D Graph Visualizer
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Interactive 2D/3D graph plotting tool for mathematical functions.
+              Interactive 2D graph plotting tool for mathematical functions.
             </p>
           </div>
 
@@ -55,50 +46,36 @@ const GraphVisualizer = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* 2D/3D Toggle */}
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="3d-mode">3D Mode</Label>
-                  <Switch
-                    id="3d-mode"
-                    checked={is3D}
-                    onCheckedChange={setIs3D}
+                {/* Single Equation Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="equation">Mathematical Equation</Label>
+                  <Input
+                    id="equation"
+                    value={equation}
+                    onChange={(e) => setEquation(e.target.value)}
+                    placeholder="e.g., y = x^2"
+                    className="font-mono"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Enter a single equation to visualize
+                  </p>
                 </div>
 
-                {/* Add Function */}
+                {/* Current Equation Display */}
                 <div className="space-y-2">
-                  <Label htmlFor="function">Add Function</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      id="function"
-                      value={newFunction}
-                      onChange={(e) => setNewFunction(e.target.value)}
-                      placeholder="e.g., y = x^2"
-                    />
-                    <Button onClick={addFunction} size="sm">
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  <Label>Current Equation</Label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md border">
+                    <code className="text-sm font-mono text-blue-600 dark:text-blue-400">
+                      {equation}
+                    </code>
                   </div>
                 </div>
 
-                {/* Function List */}
-                <div className="space-y-2">
-                  <Label>Functions</Label>
-                  {functions.map((func, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                      <code className="text-sm">{func}</code>
-                      <Button
-                        onClick={() => removeFunction(index)}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
+                <Button 
+                  onClick={updateGraph}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
                   Update Graph
                 </Button>
               </CardContent>
@@ -108,9 +85,9 @@ const GraphVisualizer = () => {
             <div className="lg:col-span-2">
               <Card className="bg-white dark:bg-gray-800 h-full">
                 <CardHeader>
-                  <CardTitle>Graph Display</CardTitle>
+                  <CardTitle>2D Graph Display</CardTitle>
                   <CardDescription>
-                    {is3D ? '3D' : '2D'} visualization of your mathematical functions
+                    2D visualization of your mathematical function
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -118,10 +95,10 @@ const GraphVisualizer = () => {
                     <div className="text-center">
                       <BarChart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 dark:text-gray-400">
-                        Graph will be displayed here
+                        2D Graph will be displayed here
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                        Currently showing: {functions.join(', ')}
+                        Currently showing: <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">{equation}</code>
                       </p>
                     </div>
                   </div>
@@ -134,7 +111,7 @@ const GraphVisualizer = () => {
           <Card className="mt-8 bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle>Function Examples</CardTitle>
-              <CardDescription>Click on any example to add it to your graph</CardDescription>
+              <CardDescription>Click on any example to load it as your equation</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -151,10 +128,10 @@ const GraphVisualizer = () => {
                   <Button
                     key={example}
                     variant="outline"
-                    onClick={() => setNewFunction(example)}
-                    className="text-left justify-start"
+                    onClick={() => setEquation(example)}
+                    className="text-left justify-start font-mono"
                   >
-                    <code>{example}</code>
+                    {example}
                   </Button>
                 ))}
               </div>
