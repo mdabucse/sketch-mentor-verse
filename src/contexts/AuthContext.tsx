@@ -3,10 +3,20 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
-// Use Lovable's Supabase integration
+// Use Lovable's Supabase integration - the environment variables should be automatically set
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Key exists:', !!supabaseAnonKey);
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase environment variables are missing. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
+}
+
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
 );
 
 interface AuthContextType {
@@ -56,6 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     console.log('Attempting login with:', email);
+    console.log('Supabase client URL:', supabase.supabaseUrl);
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -75,6 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, password: string) => {
     console.log('Attempting registration with:', email);
+    console.log('Supabase client URL:', supabase.supabaseUrl);
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
