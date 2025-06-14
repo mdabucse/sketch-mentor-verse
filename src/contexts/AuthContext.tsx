@@ -26,6 +26,13 @@ export const useAuth = () => {
 // Activity tracking functions
 export const trackUserActivity = async (userId: string, activity: string, details?: any) => {
   try {
+    // Check if we have a valid session before tracking
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.log('No active session, skipping activity tracking');
+      return;
+    }
+
     const { error } = await supabase
       .from('user_activities')
       .insert({
@@ -62,10 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     console.log('Login successful:', data);
-    // Track login activity
-    if (data.user) {
-      await trackUserActivity(data.user.id, 'login');
-    }
+    // Track login activity will be handled by the auth state change
   };
 
   const register = async (email: string, password: string) => {
@@ -85,10 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     console.log('Registration successful:', data);
-    // Track registration activity
-    if (data.user) {
-      await trackUserActivity(data.user.id, 'registration');
-    }
+    // Don't track registration activity here - user is not authenticated yet
+    // This will be tracked when they confirm their email and sign in
   };
 
   const loginWithGoogle = async () => {
@@ -106,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     // Track logout activity before signing out
-    if (currentUser) {
+    if (currentUser && session) {
       await trackUserActivity(currentUser.id, 'logout');
     }
     
@@ -132,11 +134,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(session?.user ?? null);
       setLoading(false);
       
-      // Track login activity for OAuth providers
+      // Only track activity when user has an active session
       if (event === 'SIGNED_IN' && session?.user) {
-        await trackUserActivity(session.user.id, 'login', {
-          provider: session.user.app_metadata?.provider || 'email'
-        });
+        // Use setTimeout to defer the tracking call to avoid blocking the auth flow
+        setTimeout(async () => {
+          await trackUserActivity(session.user.id, 'login', {
+            provider: session.user.app_metadata?.provider || 'email'
+          });
+        }, 100);
       }
     });
 
