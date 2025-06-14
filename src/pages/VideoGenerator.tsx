@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { Play, Download, Wand2, Video, Sparkles, Clock } from 'lucide-react';
@@ -13,16 +12,10 @@ const VideoGenerator = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast.error('Please enter a question to generate a video');
-      return;
-    }
-
-    if (!apiKey.trim()) {
-      toast.error('Please enter your API key');
       return;
     }
     
@@ -35,7 +28,6 @@ const VideoGenerator = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           prompt: prompt,
@@ -135,19 +127,6 @@ const VideoGenerator = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <label htmlFor="apiKey" className="block text-sm font-medium mb-2">
-                      API Key
-                    </label>
-                    <Input
-                      id="apiKey"
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="Enter your API key"
-                      className="mb-4"
-                    />
-                  </div>
                   <Textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
@@ -156,7 +135,7 @@ const VideoGenerator = () => {
                   />
                   <Button 
                     onClick={handleGenerate} 
-                    disabled={isGenerating || !prompt.trim() || !apiKey.trim()}
+                    disabled={isGenerating || !prompt.trim()}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     {isGenerating ? (
