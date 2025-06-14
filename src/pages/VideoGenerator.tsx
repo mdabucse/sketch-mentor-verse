@@ -3,46 +3,101 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { Play, Download, Wand2, Video, Sparkles, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 
 const VideoGenerator = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+      toast.error('Please enter a question to generate a video');
+      return;
+    }
+
+    if (!apiKey.trim()) {
+      toast.error('Please enter your API key');
+      return;
+    }
     
     setIsGenerating(true);
-    // Simulate video generation
-    setTimeout(() => {
-      setVideoUrl('https://example.com/demo-video.mp4');
+    setVideoUrl('');
+
+    try {
+      // Replace this URL with your actual video generation API endpoint
+      const response = await fetch('https://your-api-endpoint.com/generate-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          // Add any other parameters your API needs
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Assuming the API returns a video URL in the response
+      // Adjust this based on your actual API response structure
+      if (data.videoUrl || data.video_url || data.url) {
+        const generatedVideoUrl = data.videoUrl || data.video_url || data.url;
+        setVideoUrl(generatedVideoUrl);
+        toast.success('Video generated successfully!');
+      } else {
+        throw new Error('No video URL found in API response');
+      }
+
+    } catch (error) {
+      console.error('Error generating video:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate video. Please try again.');
+    } finally {
       setIsGenerating(false);
-    }, 4000);
+    }
+  };
+
+  const handleDownload = () => {
+    if (videoUrl) {
+      const link = document.createElement('a');
+      link.href = videoUrl;
+      link.download = 'generated-video.mp4';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const examplePrompts = [
     {
       title: "Pythagorean Theorem",
       description: "Explain the Pythagorean theorem with visual proof",
-      prompt: "Create an educational video explaining the Pythagorean theorem. Show a right triangle, label the sides as a, b, and c, and demonstrate that a² + b² = c². Include a visual proof using squares."
+      prompt: "Explain the Pythagorean theorem with a visual demonstration"
     },
     {
       title: "Photosynthesis Process",
       description: "Illustrate how plants convert sunlight to energy",
-      prompt: "Create a video showing the process of photosynthesis. Start with a plant, show sunlight hitting the leaves, explain the chemical equation 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂, and animate the process."
+      prompt: "How does photosynthesis work in plants?"
     },
     {
       title: "Solar System Tour",
       description: "Take a journey through our solar system",
-      prompt: "Create an educational video touring the solar system. Start from the Sun, visit each planet in order, show their relative sizes, and include interesting facts about each planet."
+      prompt: "Take me on a tour of our solar system"
     },
     {
       title: "DNA Structure",
       description: "Visualize the double helix structure of DNA",
-      prompt: "Create a video explaining DNA structure. Show the double helix, highlight the base pairs (A-T, C-G), explain how genetic information is stored, and animate DNA replication."
+      prompt: "What is the structure of DNA and how does it work?"
     }
   ];
 
@@ -80,6 +135,19 @@ const VideoGenerator = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  <div>
+                    <label htmlFor="apiKey" className="block text-sm font-medium mb-2">
+                      API Key
+                    </label>
+                    <Input
+                      id="apiKey"
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="Enter your API key"
+                      className="mb-4"
+                    />
+                  </div>
                   <Textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
@@ -88,7 +156,7 @@ const VideoGenerator = () => {
                   />
                   <Button 
                     onClick={handleGenerate} 
-                    disabled={isGenerating || !prompt.trim()}
+                    disabled={isGenerating || !prompt.trim() || !apiKey.trim()}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     {isGenerating ? (
@@ -129,20 +197,22 @@ const VideoGenerator = () => {
                   </div>
                 ) : videoUrl ? (
                   <div className="space-y-4">
-                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-blue-600/20"></div>
-                      <div className="text-center z-10">
-                        <Play className="h-16 w-16 text-white mb-2 mx-auto" />
-                        <p className="text-white font-medium">Educational Video Ready</p>
-                        <p className="text-gray-200 text-sm">Based on your question</p>
-                      </div>
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                      <video 
+                        controls 
+                        className="w-full h-full object-contain"
+                        poster="/placeholder.svg"
+                      >
+                        <source src={videoUrl} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
                     </div>
                     <div className="flex space-x-2">
                       <Button variant="outline" className="flex-1">
                         <Play className="h-4 w-4 mr-2" />
                         Play Video
                       </Button>
-                      <Button variant="outline" className="flex-1">
+                      <Button variant="outline" className="flex-1" onClick={handleDownload}>
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </Button>
