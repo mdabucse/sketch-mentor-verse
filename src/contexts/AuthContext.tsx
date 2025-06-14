@@ -3,21 +3,18 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Use Lovable's Supabase integration - no need for env variables
+export const supabase = createClient(
+  'https://your-project.supabase.co', // This will be handled by Lovable's integration
+  'your-anon-key' // This will be handled by Lovable's integration
+);
 
 interface AuthContextType {
   currentUser: User | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -85,6 +82,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    
+    if (error) throw error;
+    
+    // Track Google login activity will be handled by the auth state change
+  };
+
   const logout = async () => {
     // Track logout activity before signing out
     if (currentUser) {
@@ -106,10 +116,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setCurrentUser(session?.user ?? null);
       setLoading(false);
+      
+      // Track login activity for OAuth providers
+      if (event === 'SIGNED_IN' && session?.user) {
+        await trackUserActivity(session.user.id, 'login', {
+          provider: session.user.app_metadata?.provider || 'email'
+        });
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -120,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     login,
     register,
+    loginWithGoogle,
     logout,
     loading
   };
