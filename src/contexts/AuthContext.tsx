@@ -3,10 +3,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
-// Use Lovable's Supabase integration - no need for env variables
+// Use Lovable's Supabase integration
 export const supabase = createClient(
-  'https://your-project.supabase.co', // This will be handled by Lovable's integration
-  'your-anon-key' // This will be handled by Lovable's integration
+  import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 );
 
 interface AuthContextType {
@@ -55,13 +55,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const login = async (email: string, password: string) => {
+    console.log('Attempting login with:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
     
+    console.log('Login successful:', data);
     // Track login activity
     if (data.user) {
       await trackUserActivity(data.user.id, 'login');
@@ -69,13 +74,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string) => {
+    console.log('Attempting registration with:', email);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
     
+    console.log('Registration successful:', data);
     // Track registration activity
     if (data.user) {
       await trackUserActivity(data.user.id, 'registration');
@@ -108,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session);
       setSession(session);
       setCurrentUser(session?.user ?? null);
       setLoading(false);
@@ -117,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session);
       setSession(session);
       setCurrentUser(session?.user ?? null);
       setLoading(false);
