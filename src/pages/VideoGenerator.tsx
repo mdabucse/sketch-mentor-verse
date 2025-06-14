@@ -3,30 +3,54 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { Play, Download, Code, Video } from 'lucide-react';
+import { Play, Download, Wand2, Video, Sparkles, Clock } from 'lucide-react';
 
 const VideoGenerator = () => {
-  const [code, setCode] = useState(`from manim import *
-
-class CreateCircle(Scene):
-    def construct(self):
-        circle = Circle()
-        circle.set_fill(PINK, opacity=0.5)
-        self.play(Create(circle))`);
+  const [prompt, setPrompt] = useState('');
+  const [title, setTitle] = useState('');
+  const [duration, setDuration] = useState('30');
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const [generatedTitle, setGeneratedTitle] = useState('');
 
   const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    
     setIsGenerating(true);
     // Simulate video generation
     setTimeout(() => {
       setVideoUrl('https://example.com/demo-video.mp4');
+      setGeneratedTitle(title || 'Generated Educational Video');
       setIsGenerating(false);
-    }, 3000);
+    }, 4000);
   };
+
+  const examplePrompts = [
+    {
+      title: "Pythagorean Theorem",
+      description: "Explain the Pythagorean theorem with visual proof",
+      prompt: "Create an educational video explaining the Pythagorean theorem. Show a right triangle, label the sides as a, b, and c, and demonstrate that a² + b² = c². Include a visual proof using squares."
+    },
+    {
+      title: "Photosynthesis Process",
+      description: "Illustrate how plants convert sunlight to energy",
+      prompt: "Create a video showing the process of photosynthesis. Start with a plant, show sunlight hitting the leaves, explain the chemical equation 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂, and animate the process."
+    },
+    {
+      title: "Solar System Tour",
+      description: "Take a journey through our solar system",
+      prompt: "Create an educational video touring the solar system. Start from the Sun, visit each planet in order, show their relative sizes, and include interesting facts about each planet."
+    },
+    {
+      title: "DNA Structure",
+      description: "Visualize the double helix structure of DNA",
+      prompt: "Create a video explaining DNA structure. Show the double helix, highlight the base pairs (A-T, C-G), explain how genetic information is stored, and animate DNA replication."
+    }
+  ];
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -41,44 +65,69 @@ class CreateCircle(Scene):
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
               <Video className="h-8 w-8 mr-3 text-purple-600" />
-              Video Generator
+              AI Video Generator
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Create educational videos from Manim code with AI-powered explanations.
+              Create educational videos from simple text prompts using AI-powered animation.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Code Editor */}
+            {/* Prompt Input */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Code className="h-5 w-5 mr-2" />
-                  Manim Code Editor
+                  <Wand2 className="h-5 w-5 mr-2" />
+                  Video Prompt
                 </CardTitle>
                 <CardDescription>
-                  Write your Manim code to generate educational videos
+                  Describe what you want to teach and we'll create an educational video
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="code">Python Code</Label>
+                    <Label htmlFor="title">Video Title (Optional)</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Enter a title for your video..."
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="duration">Duration (seconds)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      min="10"
+                      max="300"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="prompt">What do you want to teach?</Label>
                     <Textarea
-                      id="code"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      className="min-h-[300px] font-mono text-sm"
-                      placeholder="Enter your Manim code here..."
+                      id="prompt"
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      className="min-h-[200px] mt-1"
+                      placeholder="Describe the concept you want to teach. Be specific about what you want to show, explain, or demonstrate. For example: 'Explain how gravity works by showing objects falling at different speeds, include the formula F = ma, and show the moon orbiting Earth.'"
                     />
                   </div>
                   <Button 
                     onClick={handleGenerate} 
-                    disabled={isGenerating}
+                    disabled={isGenerating || !prompt.trim()}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     {isGenerating ? (
-                      <>Generating Video...</>
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                        Generating Video...
+                      </>
                     ) : (
                       <>
                         <Play className="h-4 w-4 mr-2" />
@@ -95,26 +144,35 @@ class CreateCircle(Scene):
               <CardHeader>
                 <CardTitle>Video Preview</CardTitle>
                 <CardDescription>
-                  Generated video will appear here
+                  {generatedTitle || 'Generated video will appear here'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isGenerating ? (
-                  <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                  <div className="aspect-video bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 rounded-lg flex items-center justify-center">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600 dark:text-gray-400">Generating video...</p>
+                      <div className="relative">
+                        <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
+                        <Sparkles className="h-6 w-6 text-purple-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                      </div>
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">AI is creating your video...</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">This may take a few moments</p>
                     </div>
                   </div>
                 ) : videoUrl ? (
                   <div className="space-y-4">
-                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-                      <p className="text-white">Video Player (Demo)</p>
+                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-blue-600/20"></div>
+                      <div className="text-center z-10">
+                        <Play className="h-16 w-16 text-white mb-2 mx-auto" />
+                        <p className="text-white font-medium">Educational Video Ready</p>
+                        <p className="text-gray-200 text-sm">{generatedTitle}</p>
+                      </div>
                     </div>
                     <div className="flex space-x-2">
                       <Button variant="outline" className="flex-1">
                         <Play className="h-4 w-4 mr-2" />
-                        Play
+                        Play Video
                       </Button>
                       <Button variant="outline" className="flex-1">
                         <Download className="h-4 w-4 mr-2" />
@@ -126,7 +184,8 @@ class CreateCircle(Scene):
                   <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <Video className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600 dark:text-gray-400">No video generated yet</p>
+                      <p className="text-gray-600 dark:text-gray-400">Enter a prompt to generate your video</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">AI will create educational content based on your description</p>
                     </div>
                   </div>
                 )}
@@ -134,22 +193,41 @@ class CreateCircle(Scene):
             </Card>
           </div>
 
-          {/* Examples */}
+          {/* Example Prompts */}
           <Card className="mt-8 bg-white dark:bg-gray-800">
             <CardHeader>
-              <CardTitle>Code Examples</CardTitle>
-              <CardDescription>Click on any example to load it in the editor</CardDescription>
+              <CardTitle className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2" />
+                Example Prompts
+              </CardTitle>
+              <CardDescription>Click on any example to load it in the prompt field</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                  <h4 className="font-semibold mb-2">Basic Circle Animation</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Create and animate a simple circle</p>
-                </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                  <h4 className="font-semibold mb-2">Mathematical Equations</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Display and transform mathematical expressions</p>
-                </div>
+                {examplePrompts.map((example, index) => (
+                  <div 
+                    key={index}
+                    className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border border-transparent hover:border-purple-200 dark:hover:border-purple-700"
+                    onClick={() => {
+                      setPrompt(example.prompt);
+                      setTitle(example.title);
+                    }}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">{example.title}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{example.description}</p>
+                        <div className="flex items-center text-xs text-purple-600 dark:text-purple-400">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Click to use this prompt
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
