@@ -16,7 +16,7 @@ import {
 const firebaseConfig = {
   // This would be replaced with actual Firebase config
   apiKey: "demo-key",
-  authDomain: "sketchmentor-demo",
+  authDomain: "sketchmentor-demo.firebaseapp.com",
   projectId: "sketchmentor-demo",
   storageBucket: "sketchmentor-demo.appspot.com",
   messagingSenderId: "123456789",
