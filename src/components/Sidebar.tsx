@@ -64,10 +64,18 @@ const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
-        <Button variant="ghost" className="w-full justify-start">
-          <Settings className="mr-3 h-5 w-5" />
-          Settings
-        </Button>
+        <Link to="/settings">
+          <Button
+            variant={location.pathname === "/settings" ? "secondary" : "ghost"}
+            className={cn(
+              "w-full justify-start",
+              location.pathname === "/settings" && "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
+            )}
+          >
+            <Settings className="mr-3 h-5 w-5" />
+            Settings
+          </Button>
+        </Link>
         <Button
           variant="ghost"
           onClick={handleLogout}

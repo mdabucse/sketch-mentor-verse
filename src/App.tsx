@@ -14,6 +14,7 @@ import VideoGenerator from "./pages/VideoGenerator";
 import GraphVisualizer from "./pages/GraphVisualizer";
 import DocumentAnalyzer from "./pages/DocumentAnalyzer";
 import CanvasAI from "./pages/CanvasAI";
+import SettingsPage from "./pages/Settings"; // Import the new Settings page
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -54,6 +55,11 @@ const App = () => (
               <Route path="/canvas-ai" element={
                 <ProtectedRoute>
                   <CanvasAI />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={ // Add route for Settings page
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
