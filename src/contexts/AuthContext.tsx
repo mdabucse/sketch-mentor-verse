@@ -26,7 +26,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      // Handle popup closed by user
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log('Popup was closed by user');
+        return;
+      }
+      // Re-throw other errors
+      throw error;
+    }
   };
 
   const logout = async () => {

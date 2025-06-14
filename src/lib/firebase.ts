@@ -1,5 +1,5 @@
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -11,12 +11,17 @@ const firebaseConfig = {
   appId: "1:889171754251:web:e31ab803afa3ab5e9bf60e"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if no apps exist
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Configure Google provider for better popup handling
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Export auth functions
 export { signInWithPopup, signOut };
