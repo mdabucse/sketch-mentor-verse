@@ -1,45 +1,128 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { Image, Eraser, RotateCcw, Wand2, Copy } from 'lucide-react';
+import { Image, Eraser, RotateCcw, Wand2, Copy, Pencil, Circle, Square, Minus, Play } from 'lucide-react';
+import axios from 'axios';
 
 const CanvasAI = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [solution, setSolution] = useState<any>(null);
+  const [color, setColor] = useState('#ffffff');
+  const [lineWidth, setLineWidth] = useState(3);
+  const [shape, setShape] = useState('free');
+  const [startPos, setStartPos] = useState<{x: number, y: number} | null>(null);
+  const [isErasing, setIsErasing] = useState(false);
+  const [activeTool, setActiveTool] = useState('free');
+  const [responseText, setResponseText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const startDrawing = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      const rect = canvas.getBoundingClientRect();
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.beginPath();
-        ctx.moveTo(event.clientX - rect.left, event.clientY - rect.top);
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        // Set black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+    }
+  }, []);
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    if (isErasing) {
+      const size = lineWidth * 2;
+      ctx.clearRect(offsetX - size / 2, offsetY - size / 2, size, size);
+      // Fill cleared area with black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(offsetX - size / 2, offsetY - size / 2, size, size);
+    } else if (shape === 'free') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.beginPath();
+      ctx.moveTo(offsetX, offsetY);
+    } else {
+      setStartPos({ x: offsetX, y: offsetY });
+    }
+    setIsDrawing(true);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    if (isErasing) {
+      const size = lineWidth * 2;
+      ctx.clearRect(offsetX - size / 2, offsetY - size / 2, size, size);
+      // Fill cleared area with black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(offsetX - size / 2, offsetY - size / 2, size, size);
+    } else if (shape === 'free') {
+      ctx.lineTo(offsetX, offsetY);
+      ctx.stroke();
     }
   };
 
-  const draw = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const stopDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
+    setIsDrawing(false);
+
+    if (isErasing) return;
+
+    if (shape !== 'free' && startPos) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.lineTo(event.clientX - rect.left, event.clientY - rect.top);
+      if (!ctx) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const endX = e.clientX - rect.left;
+      const endY = e.clientY - rect.top;
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+
+      if (shape === 'rectangle') {
+        ctx.strokeRect(startPos.x, startPos.y, endX - startPos.x, endY - startPos.y);
+      } else if (shape === 'circle') {
+        const radius = Math.sqrt((endX - startPos.x) ** 2 + (endY - startPos.y) ** 2);
+        ctx.beginPath();
+        ctx.arc(startPos.x, startPos.y, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (shape === 'line') {
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(endX, endY);
         ctx.stroke();
       }
     }
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
+    setStartPos(null);
   };
 
   const clearCanvas = () => {
@@ -48,27 +131,101 @@ const CanvasAI = () => {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Set black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
-    setSolution(null);
+    setResponseText('');
   };
 
-  const solveEquation = async () => {
+  const selectTool = (tool: string) => {
+    setActiveTool(tool);
+    setIsErasing(tool === 'eraser');
+    if (tool !== 'eraser') setShape(tool);
+  };
+
+  const runBackendAnalysis = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error('Canvas reference not found.');
+      setResponseText('Error: Canvas not found.');
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Check if canvas has any content
+    const hasContent = (() => {
+      const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let i = 0; i < pixelData.length; i += 4) {
+        // Check if pixel is not black (allowing for some tolerance)
+        if (pixelData[i] > 10 || pixelData[i + 1] > 10 || pixelData[i + 2] > 10) {
+          return true;
+        }
+      }
+      return false;
+    })();
+
+    if (!hasContent) {
+      console.error('Canvas is empty. Please draw something.');
+      setResponseText('Error: Please draw something before running.');
+      return;
+    }
+
+    // Convert canvas to base64 image
+    const imageData = canvas.toDataURL('image/png');
+
+    if (!imageData || imageData.length < 100) {
+      console.error('Image data is empty or too small.');
+      setResponseText('Error: Image data is invalid.');
+      return;
+    }
+
     setIsProcessing(true);
-    // Simulate AI processing
-    setTimeout(() => {
-      setSolution({
-        equation: "2x + 3 = 7",
-        steps: [
-          { step: "2x + 3 = 7", description: "Original equation" },
-          { step: "2x = 7 - 3", description: "Subtract 3 from both sides" },
-          { step: "2x = 4", description: "Simplify" },
-          { step: "x = 2", description: "Divide both sides by 2" }
-        ],
-        answer: "x = 2"
-      });
+    
+    try {
+      console.log('Sending image data to backend...');
+
+      const response = await axios.post(
+        'https://srt9mmrf-5000.inc1.devtunnels.ms/calculate',
+        { image: imageData, dict_of_vars: {} },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      console.log('Backend Response:', response.data);
+
+      if (
+        response.data &&
+        Array.isArray(response.data.data) &&
+        response.data.data.length > 0
+      ) {
+        const resultObj = response.data.data[0];
+        
+        setResponseText(`${resultObj.expr} = ${resultObj.result}`);
+
+        // Clear canvas and display result
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px Arial';
+
+        console.log('Drawing on Canvas:', resultObj.expr, resultObj.result);
+
+        ctx.fillText(`Expression: ${resultObj.expr}`, 20, 50);
+        ctx.fillText(`Result: ${resultObj.result}`, 20, 100);
+      } else {
+        console.error('Unexpected backend response format:', response.data);
+        setResponseText('Error: Unexpected backend response.');
+      }
+    } catch (error) {
+      console.error('Error calling backend:', error);
+      setResponseText('Network error. Check backend server.');
+    } finally {
       setIsProcessing(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -87,7 +244,7 @@ const CanvasAI = () => {
               Canvas AI
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Solve handwritten math equations drawn on canvas with step-by-step solutions.
+              Draw mathematical equations and get step-by-step solutions powered by AI.
             </p>
           </div>
 
@@ -95,19 +252,102 @@ const CanvasAI = () => {
             {/* Drawing Canvas */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle>Draw Your Equation</CardTitle>
+                <CardTitle>Drawing Canvas</CardTitle>
                 <CardDescription>
-                  Write your mathematical equation on the canvas below
+                  Use the tools below to draw your mathematical equation
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  {/* Drawing Tools */}
+                  <div className="flex flex-wrap gap-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <Button
+                      variant={activeTool === 'free' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => selectTool('free')}
+                      className="flex items-center gap-2"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Pen
+                    </Button>
+
+                    <Button
+                      variant={activeTool === 'rectangle' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => selectTool('rectangle')}
+                      className="flex items-center gap-2"
+                    >
+                      <Square className="h-4 w-4" />
+                      Rectangle
+                    </Button>
+
+                    <Button
+                      variant={activeTool === 'circle' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => selectTool('circle')}
+                      className="flex items-center gap-2"
+                    >
+                      <Circle className="h-4 w-4" />
+                      Circle
+                    </Button>
+
+                    <Button
+                      variant={activeTool === 'line' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => selectTool('line')}
+                      className="flex items-center gap-2"
+                    >
+                      <Minus className="h-4 w-4" />
+                      Line
+                    </Button>
+
+                    <Button
+                      variant={activeTool === 'eraser' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => selectTool('eraser')}
+                      className="flex items-center gap-2"
+                    >
+                      <Eraser className="h-4 w-4" />
+                      Eraser
+                    </Button>
+                  </div>
+
+                  {/* Canvas Controls */}
+                  <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium">Size:</label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="20"
+                        value={lineWidth}
+                        onChange={(e) => setLineWidth(Number(e.target.value))}
+                        className="w-24"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 w-8">
+                        {lineWidth}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium">Color:</label>
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        disabled={isErasing}
+                        className="w-12 h-8 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Canvas */}
                   <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                     <canvas
                       ref={canvasRef}
-                      width={400}
-                      height={300}
-                      className="w-full cursor-crosshair bg-white"
+                      width={500}
+                      height={400}
+                      className="w-full cursor-crosshair bg-black"
                       onMouseDown={startDrawing}
                       onMouseMove={draw}
                       onMouseUp={stopDrawing}
@@ -116,31 +356,28 @@ const CanvasAI = () => {
                     />
                   </div>
                   
-                  <div className="flex space-x-2">
-                    <Button onClick={clearCanvas} variant="outline" className="flex-1">
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={runBackendAnalysis}
+                      disabled={isProcessing}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                    >
+                      {isProcessing ? (
+                        <>Processing...</>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Solve with AI
+                        </>
+                      )}
+                    </Button>
+
+                    <Button onClick={clearCanvas} variant="outline">
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Clear
                     </Button>
-                    <Button onClick={clearCanvas} variant="outline" className="flex-1">
-                      <Eraser className="h-4 w-4 mr-2" />
-                      Erase
-                    </Button>
                   </div>
-
-                  <Button
-                    onClick={solveEquation}
-                    disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                  >
-                    {isProcessing ? (
-                      <>Processing...</>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        Solve with AI
-                      </>
-                    )}
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -148,9 +385,9 @@ const CanvasAI = () => {
             {/* Solution Display */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle>Solution</CardTitle>
+                <CardTitle>AI Solution</CardTitle>
                 <CardDescription>
-                  Step-by-step solution will appear here
+                  Mathematical analysis results will appear here
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -158,43 +395,21 @@ const CanvasAI = () => {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
                     <p className="text-gray-600 dark:text-gray-400">
-                      AI is analyzing your handwriting...
+                      AI is analyzing your drawing...
                     </p>
                   </div>
-                ) : solution ? (
+                ) : responseText ? (
                   <div className="space-y-4">
-                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
-                        Detected Equation:
-                      </h4>
-                      <code className="text-lg">{solution.equation}</code>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">Step-by-Step Solution:</h4>
-                      {solution.steps.map((step: any, index: number) => (
-                        <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <code className="block font-mono text-sm mb-1">{step.step}</code>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{step.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
                     <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                       <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">
-                        Final Answer:
+                        Solution:
                       </h4>
-                      <code className="text-xl text-green-800 dark:text-green-200">
-                        {solution.answer}
+                      <code className="text-lg text-green-800 dark:text-green-200 font-mono">
+                        {responseText}
                       </code>
                     </div>
 
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={() => navigator.clipboard.writeText(responseText)}>
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Solution
                     </Button>
@@ -203,7 +418,7 @@ const CanvasAI = () => {
                   <div className="text-center py-8">
                     <Image className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600 dark:text-gray-400">
-                      Draw an equation on the canvas and click "Solve with AI"
+                      Draw a mathematical equation on the canvas and click "Solve with AI"
                     </p>
                   </div>
                 )}
