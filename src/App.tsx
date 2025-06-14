@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +13,7 @@ import VideoGenerator from "./pages/VideoGenerator";
 import GraphVisualizer from "./pages/GraphVisualizer";
 import DocumentAnalyzer from "./pages/DocumentAnalyzer";
 import CanvasAI from "./pages/CanvasAI";
+import YouTubeTranscriber from "./pages/YouTubeTranscriber";
 import SettingsPage from "./pages/Settings"; // Import the new Settings page
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
@@ -57,7 +57,12 @@ const App = () => (
                   <CanvasAI />
                 </ProtectedRoute>
               } />
-              <Route path="/settings" element={ // Add route for Settings page
+              <Route path="/youtube-transcriber" element={
+                <ProtectedRoute>
+                  <YouTubeTranscriber />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
                 <ProtectedRoute>
                   <SettingsPage />
                 </ProtectedRoute>

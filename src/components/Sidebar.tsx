@@ -1,10 +1,9 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Video, BarChart, FileText, Image, Settings, LogOut, Home } from 'lucide-react';
+import { Video, BarChart, FileText, Image, Settings, LogOut, Home, Youtube } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -16,6 +15,7 @@ const Sidebar = () => {
     { name: 'Graph Visualizer', href: '/graph-visualizer', icon: BarChart },
     { name: 'Document Analyzer', href: '/document-analyzer', icon: FileText },
     { name: 'Canvas AI', href: '/canvas-ai', icon: Image },
+    { name: 'YouTube Transcriber', href: '/youtube-transcriber', icon: Youtube },
   ];
 
   const handleLogout = async () => {
