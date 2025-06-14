@@ -6,8 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextType {
   currentUser: User | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
@@ -55,44 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const login = async (email: string, password: string) => {
-    console.log('Attempting login with:', email);
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-    
-    console.log('Login successful:', data);
-    // Track login activity will be handled by the auth state change
-  };
-
-  const register = async (email: string, password: string) => {
-    console.log('Attempting registration with:', email);
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`
-      }
-    });
-    
-    if (error) {
-      console.error('Registration error:', error);
-      throw error;
-    }
-    
-    console.log('Registration successful:', data);
-    // Don't track registration activity here - user is not authenticated yet
-    // This will be tracked when they confirm their email and sign in
-  };
-
   const loginWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -139,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Use setTimeout to defer the tracking call to avoid blocking the auth flow
         setTimeout(async () => {
           await trackUserActivity(session.user.id, 'login', {
-            provider: session.user.app_metadata?.provider || 'email'
+            provider: session.user.app_metadata?.provider || 'google'
           });
         }, 100);
       }
@@ -151,8 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     currentUser,
     session,
-    login,
-    register,
     loginWithGoogle,
     logout,
     loading
