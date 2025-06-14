@@ -3,19 +3,14 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { Play, Download, Wand2, Video, Sparkles, Clock } from 'lucide-react';
 
 const VideoGenerator = () => {
   const [prompt, setPrompt] = useState('');
-  const [title, setTitle] = useState('');
-  const [duration, setDuration] = useState('30');
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
-  const [generatedTitle, setGeneratedTitle] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -24,7 +19,6 @@ const VideoGenerator = () => {
     // Simulate video generation
     setTimeout(() => {
       setVideoUrl('https://example.com/demo-video.mp4');
-      setGeneratedTitle(title || 'Generated Educational Video');
       setIsGenerating(false);
     }, 4000);
   };
@@ -78,46 +72,20 @@ const VideoGenerator = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Wand2 className="h-5 w-5 mr-2" />
-                  Video Prompt
+                  What do you want to learn?
                 </CardTitle>
                 <CardDescription>
-                  Describe what you want to teach and we'll create an educational video
+                  Ask any question and we'll create an educational video to explain it
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Video Title (Optional)</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter a title for your video..."
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="duration">Duration (seconds)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      min="10"
-                      max="300"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="prompt">What do you want to teach?</Label>
-                    <Textarea
-                      id="prompt"
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      className="min-h-[200px] mt-1"
-                      placeholder="Describe the concept you want to teach. Be specific about what you want to show, explain, or demonstrate. For example: 'Explain how gravity works by showing objects falling at different speeds, include the formula F = ma, and show the moon orbiting Earth.'"
-                    />
-                  </div>
+                  <Textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="min-h-[200px]"
+                    placeholder="Ask any question you want to learn about. For example: 'How does gravity work?', 'Explain photosynthesis', 'What is the Pythagorean theorem?'"
+                  />
                   <Button 
                     onClick={handleGenerate} 
                     disabled={isGenerating || !prompt.trim()}
@@ -126,12 +94,12 @@ const VideoGenerator = () => {
                     {isGenerating ? (
                       <>
                         <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                        Generating Video...
+                        Creating Video...
                       </>
                     ) : (
                       <>
                         <Play className="h-4 w-4 mr-2" />
-                        Generate Video
+                        Create Video
                       </>
                     )}
                   </Button>
@@ -142,9 +110,9 @@ const VideoGenerator = () => {
             {/* Video Preview */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle>Video Preview</CardTitle>
+                <CardTitle>Your Video</CardTitle>
                 <CardDescription>
-                  {generatedTitle || 'Generated video will appear here'}
+                  Generated video will appear here
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -166,7 +134,7 @@ const VideoGenerator = () => {
                       <div className="text-center z-10">
                         <Play className="h-16 w-16 text-white mb-2 mx-auto" />
                         <p className="text-white font-medium">Educational Video Ready</p>
-                        <p className="text-gray-200 text-sm">{generatedTitle}</p>
+                        <p className="text-gray-200 text-sm">Based on your question</p>
                       </div>
                     </div>
                     <div className="flex space-x-2">
@@ -184,8 +152,8 @@ const VideoGenerator = () => {
                   <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <Video className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600 dark:text-gray-400">Enter a prompt to generate your video</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">AI will create educational content based on your description</p>
+                      <p className="text-gray-600 dark:text-gray-400">Ask a question to generate your video</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">AI will create educational content based on your question</p>
                     </div>
                   </div>
                 )}
@@ -198,9 +166,9 @@ const VideoGenerator = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Sparkles className="h-5 w-5 mr-2" />
-                Example Prompts
+                Example Questions
               </CardTitle>
-              <CardDescription>Click on any example to load it in the prompt field</CardDescription>
+              <CardDescription>Click on any example to load it as your question</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -208,10 +176,7 @@ const VideoGenerator = () => {
                   <div 
                     key={index}
                     className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border border-transparent hover:border-purple-200 dark:hover:border-purple-700"
-                    onClick={() => {
-                      setPrompt(example.prompt);
-                      setTitle(example.title);
-                    }}
+                    onClick={() => setPrompt(example.prompt)}
                   >
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0">
@@ -222,7 +187,7 @@ const VideoGenerator = () => {
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{example.description}</p>
                         <div className="flex items-center text-xs text-purple-600 dark:text-purple-400">
                           <Clock className="h-3 w-3 mr-1" />
-                          Click to use this prompt
+                          Click to use this question
                         </div>
                       </div>
                     </div>
