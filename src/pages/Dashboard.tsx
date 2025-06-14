@@ -3,12 +3,23 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useUserActivities } from '../hooks/useUserActivities';
+import { UserActivities } from '../components/UserActivities';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { Video, BarChart, FileText, Image, Plus, Clock, BookOpen, Youtube } from 'lucide-react';
+import { useEffect } from 'react';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
+  const { trackActivity } = useUserActivities();
+
+  // Track login activity when dashboard loads
+  useEffect(() => {
+    if (currentUser) {
+      trackActivity('login', { timestamp: new Date().toISOString() });
+    }
+  }, [currentUser, trackActivity]);
 
   const features = [
     {
@@ -50,33 +61,6 @@ const Dashboard = () => {
       href: '/youtube-transcriber',
       color: 'from-orange-500 to-red-500',
       recent: 'Never used'
-    }
-  ];
-
-  const recentActivity = [
-    {
-      type: 'video',
-      title: 'Linear Algebra Visualization',
-      time: '2 hours ago',
-      status: 'Completed'
-    },
-    {
-      type: 'youtube',
-      title: 'Khan Academy: Calculus Basics',
-      time: '5 hours ago',
-      status: 'Transcribed'
-    },
-    {
-      type: 'document',
-      title: 'Calculus Textbook Analysis',
-      time: '1 day ago',
-      status: 'In Progress'
-    },
-    {
-      type: 'graph',
-      title: 'Trigonometric Functions',
-      time: '3 days ago',
-      status: 'Completed'
     }
   ];
 
@@ -138,39 +122,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <Card className="bg-white dark:bg-gray-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Clock className="h-5 w-5 mr-2" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {activity.title}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {activity.time}
-                          </p>
-                        </div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          activity.status === 'Completed' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : activity.status === 'Transcribed'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        }`}>
-                          {activity.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <UserActivities />
             </motion.div>
 
             {/* Quick Start Guide */}
