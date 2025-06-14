@@ -4,34 +4,77 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Navigation from '../components/Navigation';
 import { motion } from 'framer-motion';
-import { Video, BarChart, FileText, Image } from 'lucide-react';
+import { Video, BarChart, FileText, Image, CheckCircle, Users, Star, ArrowRight, Play, Youtube } from 'lucide-react';
 
 const Landing = () => {
   const features = [
     {
       icon: Video,
-      title: "Video Generator",
-      description: "Generate educational videos from Manim code with AI-powered explanations.",
+      title: "AI Video Generator",
+      description: "Transform mathematical concepts into engaging educational videos using advanced Manim integration and AI-powered narration.",
       gradient: "from-red-500 to-pink-500"
     },
     {
       icon: BarChart,
-      title: "Graph Visualizer",
-      description: "Interactive 2D/3D graph plotting tool for mathematical functions.",
+      title: "Interactive Graph Visualizer",
+      description: "Create stunning 2D and 3D mathematical visualizations with real-time plotting and interactive exploration tools.",
       gradient: "from-blue-500 to-cyan-500"
     },
     {
       icon: FileText,
-      title: "Document Analyzer",
-      description: "Upload PDFs to extract quizzes, flashcards, and personalized learning paths.",
+      title: "Smart Document Analyzer",
+      description: "Upload educational content and automatically generate quizzes, flashcards, and personalized learning pathways.",
       gradient: "from-green-500 to-emerald-500"
     },
     {
       icon: Image,
-      title: "Canvas AI",
-      description: "Solve handwritten math equations drawn on canvas with step-by-step solutions.",
+      title: "Canvas AI Solver",
+      description: "Draw mathematical equations by hand and get instant step-by-step solutions with detailed explanations.",
       gradient: "from-purple-500 to-indigo-500"
+    },
+    {
+      icon: Youtube,
+      title: "YouTube Transcriber",
+      description: "Extract transcriptions from educational videos and chat with AI to deepen your understanding of the content.",
+      gradient: "from-orange-500 to-red-500"
     }
+  ];
+
+  const benefits = [
+    "Accelerate learning with AI-powered explanations",
+    "Visual learning through interactive content",
+    "Personalized study materials generation",
+    "24/7 intelligent tutoring assistance",
+    "Multi-modal learning approach",
+    "Real-time problem solving support"
+  ];
+
+  const testimonials = [
+    {
+      name: "Dr. Sarah Chen",
+      role: "Mathematics Professor",
+      content: "SketchMentor has revolutionized how I create educational content. The AI-generated videos save hours of preparation time.",
+      rating: 5
+    },
+    {
+      name: "Michael Rodriguez",
+      role: "High School Student",
+      content: "The handwriting recognition feature helped me understand calculus concepts I was struggling with for months.",
+      rating: 5
+    },
+    {
+      name: "Lisa Thompson",
+      role: "Online Tutor",
+      content: "My students are more engaged than ever. The interactive visualizations make complex topics accessible.",
+      rating: 5
+    }
+  ];
+
+  const stats = [
+    { number: "50K+", label: "Active Learners" },
+    { number: "1M+", label: "Problems Solved" },
+    { number: "95%", label: "Success Rate" },
+    { number: "24/7", label: "AI Support" }
   ];
 
   const containerVariants = {
@@ -39,7 +82,7 @@ const Landing = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
+        staggerChildren: 0.1
       }
     }
   };
@@ -64,27 +107,32 @@ const Landing = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="py-20 px-4 sm:px-6 lg:px-8"
+        className="pt-20 pb-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
       >
-        <div className="max-w-7xl mx-auto text-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10 dark:from-purple-400/5 dark:to-blue-400/5"></div>
+        <div className="max-w-7xl mx-auto text-center relative">
           <motion.div 
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8"
           >
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-full text-sm font-medium text-purple-700 dark:text-purple-300 mb-6">
+              <Star className="w-4 h-4 mr-2" />
+              Trusted by 50,000+ students and educators worldwide
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                Transform Learning
+                Master Mathematics
               </span>
               <br />
               <span className="text-gray-900 dark:text-white">
-                with AI-Powered Education
+                with AI-Powered Learning
               </span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              SketchMentor revolutionizes mathematical education through interactive videos, 
-              intelligent document analysis, and handwriting recognition powered by cutting-edge AI.
+            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed mb-8">
+              Transform your learning experience with cutting-edge AI tools that make complex mathematical concepts 
+              intuitive and engaging through interactive videos, visualizations, and personalized tutoring.
             </p>
           </motion.div>
           
@@ -92,16 +140,37 @@ const Landing = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
           >
             <Link to="/signup">
-              <Button size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                Get Started Free
+              <Button size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all">
+                Start Learning Free
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-4">
+            <Button variant="outline" size="lg" className="text-lg px-8 py-4 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+              <Play className="mr-2 h-5 w-5" />
               Watch Demo
             </Button>
+          </motion.div>
+
+          {/* Stats Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
+          >
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400">
+                  {stat.number}
+                </div>
+                <div className="text-gray-600 dark:text-gray-400 font-medium">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
           </motion.div>
         </div>
       </motion.section>
@@ -112,37 +181,131 @@ const Landing = () => {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="py-20 px-4 sm:px-6 lg:px-8"
+        className="py-24 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-gray-800/50"
       >
         <div className="max-w-7xl mx-auto">
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Powerful Tools for Modern Learning
+          <motion.div variants={itemVariants} className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Powerful Tools for
+              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"> Modern Learning</span>
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Discover our suite of AI-powered educational tools designed to make complex concepts accessible and engaging.
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Our comprehensive suite of AI-powered educational tools transforms how you learn and teach mathematics.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
                 variants={itemVariants}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02, y: -5 }}
                 className="group"
               >
-                <Card className="h-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300">
-                  <CardContent className="p-6 text-center">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${feature.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                      <feature.icon className="h-8 w-8 text-white" />
+                <Card className="h-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl transition-all duration-300">
+                  <CardContent className="p-8">
+                    <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-r ${feature.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                      <feature.icon className="h-10 w-10 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">
                       {feature.title}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-300">
+                    <p className="text-gray-600 dark:text-gray-300 text-center leading-relaxed">
                       {feature.description}
                     </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Benefits Section */}
+      <motion.section 
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="py-24 px-4 sm:px-6 lg:px-8"
+      >
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div variants={itemVariants}>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-8">
+                Why Choose
+                <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"> SketchMentor?</span>
+              </h2>
+              <div className="space-y-4">
+                {benefits.map((benefit, index) => (
+                  <motion.div 
+                    key={index}
+                    variants={itemVariants}
+                    className="flex items-center space-x-4"
+                  >
+                    <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />
+                    <span className="text-lg text-gray-700 dark:text-gray-300">{benefit}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+            <motion.div variants={itemVariants} className="relative">
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-8 text-white">
+                <Users className="h-16 w-16 mb-6 opacity-80" />
+                <h3 className="text-2xl font-bold mb-4">Join Our Community</h3>
+                <p className="text-purple-100 mb-6">
+                  Connect with thousands of learners and educators who are already transforming their mathematical journey with SketchMentor.
+                </p>
+                <Link to="/signup">
+                  <Button variant="secondary" size="lg" className="w-full">
+                    Get Started Today
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Testimonials Section */}
+      <motion.section 
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900"
+      >
+        <div className="max-w-7xl mx-auto">
+          <motion.div variants={itemVariants} className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Loved by Educators & Students
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              See what our community is saying about their SketchMentor experience.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div key={index} variants={itemVariants}>
+                <Card className="h-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-8">
+                    <div className="flex mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-gray-700 dark:text-gray-300 mb-6 italic">
+                      "{testimonial.content}"
+                    </p>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {testimonial.name}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {testimonial.role}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -156,65 +319,85 @@ const Landing = () => {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-600 to-blue-600"
+        className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 relative overflow-hidden"
       >
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="max-w-4xl mx-auto text-center relative">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
             Ready to Transform Your Learning Experience?
           </h2>
-          <p className="text-xl text-purple-100 mb-8">
-            Join thousands of students and educators already using SketchMentor to make learning more interactive and effective.
+          <p className="text-xl text-purple-100 mb-12 max-w-2xl mx-auto">
+            Join thousands of students and educators who are already using SketchMentor to make learning more interactive, engaging, and effective.
           </p>
-          <Link to="/signup">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
-              Start Learning Today
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/signup">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-4 shadow-lg hover:shadow-xl">
+                Start Your Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/signin">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-4 text-white border-white hover:bg-white/10">
+                Sign In
+              </Button>
+            </Link>
+          </div>
         </div>
       </motion.section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-black text-white py-12 px-4 sm:px-6 lg:px-8">
+      <footer className="bg-gray-900 dark:bg-black text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">SM</span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="md:col-span-2">
+              <div className="flex items-center space-x-2 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">SM</span>
                 </div>
-                <span className="text-xl font-bold">SketchMentor</span>
+                <span className="text-2xl font-bold">SketchMentor</span>
               </div>
-              <p className="text-gray-400">
-                Revolutionizing education through AI-powered interactive learning tools.
+              <p className="text-gray-400 text-lg leading-relaxed mb-6">
+                Revolutionizing mathematics education through AI-powered interactive learning tools. 
+                Making complex concepts accessible to everyone, everywhere.
               </p>
+              <div className="flex space-x-4">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  Privacy Policy
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  Terms of Service
+                </Button>
+              </div>
             </div>
+            
             <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400">
+              <h4 className="font-semibold mb-6 text-lg">Product</h4>
+              <ul className="space-y-3 text-gray-400">
                 <li><Link to="#" className="hover:text-white transition-colors">Features</Link></li>
                 <li><Link to="#" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">API</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">API Documentation</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">Integrations</Link></li>
               </ul>
             </div>
+            
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="#" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Careers</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="#" className="hover:text-white transition-colors">Documentation</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">GitHub</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Support</Link></li>
+              <h4 className="font-semibold mb-6 text-lg">Support</h4>
+              <ul className="space-y-3 text-gray-400">
+                <li><Link to="#" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">Community</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">Status</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 SketchMentor. All rights reserved.</p>
+          
+          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400">&copy; 2024 SketchMentor. All rights reserved.</p>
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+              <span className="text-gray-400">Made with</span>
+              <span className="text-red-500">♥</span>
+              <span className="text-gray-400">for educators and students worldwide</span>
+            </div>
           </div>
         </div>
       </footer>
