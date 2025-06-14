@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +10,16 @@ import Navigation from '../components/Navigation';
 
 const SignIn = () => {
   const [loading, setLoading] = useState(false);
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -22,6 +29,7 @@ const SignIn = () => {
         title: "Success",
         description: "Successfully signed in with Google!",
       });
+      // Navigation will happen automatically via the useEffect above
     } catch (error: any) {
       console.error('Google login error:', error);
       toast({
