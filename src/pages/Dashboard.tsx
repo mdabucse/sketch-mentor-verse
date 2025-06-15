@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,20 +5,35 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUserActivities } from '../hooks/useUserActivities';
 import { UserActivities } from '../components/UserActivities';
 import Sidebar from '../components/Sidebar';
+import TutorialPopup from '../components/TutorialPopup';
 import { motion } from 'framer-motion';
 import { Video, BarChart, FileText, Image, Plus, Clock, BookOpen, Youtube } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const { trackActivity } = useUserActivities();
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // Track login activity when dashboard loads
   useEffect(() => {
     if (currentUser) {
       trackActivity('login', { timestamp: new Date().toISOString() });
+      
+      // Check if this is a new user (first time visiting dashboard)
+      const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${currentUser.uid}`);
+      if (!hasSeenTutorial) {
+        setShowTutorial(true);
+      }
     }
   }, [currentUser, trackActivity]);
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+    if (currentUser) {
+      localStorage.setItem(`tutorial_seen_${currentUser.uid}`, 'true');
+    }
+  };
 
   const features = [
     {
@@ -169,6 +183,11 @@ const Dashboard = () => {
           </div>
         </motion.div>
       </div>
+
+      <TutorialPopup 
+        isOpen={showTutorial} 
+        onClose={handleCloseTutorial}
+      />
     </div>
   );
 };
