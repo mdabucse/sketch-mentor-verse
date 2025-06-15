@@ -131,7 +131,7 @@ const CanvasAI = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Drawing Tools */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
@@ -216,38 +216,40 @@ const CanvasAI = () => {
             </Card>
 
             {/* Canvas */}
-            <Card className="bg-white dark:bg-gray-800 lg:col-span-2">
+            <Card className="bg-white dark:bg-gray-800 lg:col-span-3">
               <CardHeader>
                 <CardTitle>Drawing Canvas</CardTitle>
                 <CardDescription>Draw your equation or diagram here.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="relative">
-                  <canvas
-                    ref={canvasRef}
-                    width={600}
-                    height={400}
-                    className="border border-gray-300 dark:border-gray-700 rounded-md cursor-crosshair bg-white"
-                    onMouseDown={startDrawing}
-                    onMouseUp={stopDrawing}
-                    onMouseOut={stopDrawing}
-                    onMouseMove={draw}
-                  />
-                  {isAnalyzing && (
-                    <div className="absolute inset-0 bg-gray-100 dark:bg-gray-700 bg-opacity-50 flex items-center justify-center rounded-md">
-                      <p className="text-lg text-gray-600 dark:text-gray-400 animate-pulse">
-                        Analyzing...
-                      </p>
-                    </div>
-                  )}
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative w-full max-w-4xl">
+                    <canvas
+                      ref={canvasRef}
+                      width={800}
+                      height={500}
+                      className="border border-gray-300 dark:border-gray-700 rounded-md cursor-crosshair bg-white w-full h-auto max-w-full shadow-lg"
+                      onMouseDown={startDrawing}
+                      onMouseUp={stopDrawing}
+                      onMouseOut={stopDrawing}
+                      onMouseMove={draw}
+                    />
+                    {isAnalyzing && (
+                      <div className="absolute inset-0 bg-gray-100 dark:bg-gray-700 bg-opacity-50 flex items-center justify-center rounded-md">
+                        <p className="text-lg text-gray-600 dark:text-gray-400 animate-pulse">
+                          Analyzing...
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={analyzeCanvas} 
+                    disabled={isAnalyzing}
+                    className="w-full max-w-md bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                  </Button>
                 </div>
-                <Button 
-                  onClick={analyzeCanvas} 
-                  disabled={isAnalyzing}
-                  className="mt-4 w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                >
-                  {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
-                </Button>
               </CardContent>
             </Card>
           </div>
