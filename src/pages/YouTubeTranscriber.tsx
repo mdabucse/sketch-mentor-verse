@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { Youtube, Download, FileText, MessageSquare, Send, Menu, X, User, Bot } from 'lucide-react';
+import { Youtube, Download, FileText, Send, User, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -14,6 +13,7 @@ const YouTubeTranscriber = () => {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [transcription, setTranscription] = useState('');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [videoId, setVideoId] = useState('');
   
   // Chat functionality states
   const [chats, setChats] = useState([]);
@@ -21,7 +21,6 @@ const YouTubeTranscriber = () => {
   const [inputText, setInputText] = useState('');
   const [chatName, setChatName] = useState('');
   const [currentChat, setCurrentChat] = useState(null);
-  const [showChatSidebar, setShowChatSidebar] = useState(false);
   const [error, setError] = useState('');
 
   const API_BASE = 'https://srt9mmrf-5000.inc1.devtunnels.ms';
@@ -36,6 +35,12 @@ const YouTubeTranscriber = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const extractVideoId = (url) => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
 
   const fetchChatNames = async () => {
     try {
@@ -153,6 +158,13 @@ const YouTubeTranscriber = () => {
       return;
     }
 
+    const extractedVideoId = extractVideoId(youtubeUrl);
+    if (!extractedVideoId) {
+      toast.error('Please enter a valid YouTube URL');
+      return;
+    }
+
+    setVideoId(extractedVideoId);
     setIsTranscribing(true);
     setTranscription('');
 
@@ -200,12 +212,14 @@ const YouTubeTranscriber = () => {
       <Sidebar />
       
       <div className="flex-1 flex">
-        <div className="flex-1 overflow-auto">
+        {/* Main Content - Left Column */}
+        <div className="flex-1 overflow-auto p-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-8"
+            className="space-y-6"
           >
+            {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
                 <Youtube className="h-8 w-8 mr-3 text-red-600" />
@@ -216,106 +230,150 @@ const YouTubeTranscriber = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Video Input */}
+            {/* Video Input */}
+            <Card className="bg-white dark:bg-gray-800">
+              <CardHeader>
+                <CardTitle>Video URL</CardTitle>
+                <CardDescription>
+                  Enter the YouTube video URL you want to transcribe
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Input
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                  <Button 
+                    onClick={handleTranscribe} 
+                    disabled={isTranscribing || !youtubeUrl.trim()}
+                    className="w-full"
+                  >
+                    {isTranscribing ? (
+                      <>
+                        <FileText className="h-4 w-4 mr-2 animate-spin" />
+                        Transcribing...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Transcribe Video
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Video Player */}
+            {videoId && (
               <Card className="bg-white dark:bg-gray-800">
                 <CardHeader>
-                  <CardTitle>Video URL</CardTitle>
-                  <CardDescription>
-                    Enter the YouTube video URL you want to transcribe
-                  </CardDescription>
+                  <CardTitle>Video Player</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <Input
-                      value={youtubeUrl}
-                      onChange={(e) => setYoutubeUrl(e.target.value)}
-                      placeholder="https://www.youtube.com/watch?v=..."
-                    />
-                    <Button 
-                      onClick={handleTranscribe} 
-                      disabled={isTranscribing || !youtubeUrl.trim()}
-                      className="w-full"
-                    >
-                      {isTranscribing ? (
-                        <>
-                          <FileText className="h-4 w-4 mr-2 animate-spin" />
-                          Transcribing...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Transcribe Video
-                        </>
-                      )}
-                    </Button>
+                  <div className="aspect-video">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${videoId}`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full rounded-lg"
+                    ></iframe>
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              {/* Transcription Output */}
-              <Card className="bg-white dark:bg-gray-800">
-                <CardHeader>
-                  <CardTitle>Transcription</CardTitle>
-                  <CardDescription>
-                    The extracted text from the video will appear here
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isTranscribing ? (
-                    <div className="flex items-center justify-center h-64">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          Transcribing video...
-                        </p>
-                      </div>
+            {/* Transcription Output */}
+            <Card className="bg-white dark:bg-gray-800">
+              <CardHeader>
+                <CardTitle>Transcription</CardTitle>
+                <CardDescription>
+                  The extracted text from the video will appear here
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isTranscribing ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Transcribing video...
+                      </p>
                     </div>
-                  ) : transcription ? (
-                    <div className="space-y-4">
-                      <Textarea
-                        value={transcription}
-                        readOnly
-                        className="min-h-[200px]"
-                      />
-                      <Button variant="outline" className="w-full" onClick={handleDownload}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Transcription
-                      </Button>
+                  </div>
+                ) : transcription ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      value={transcription}
+                      readOnly
+                      className="min-h-[300px]"
+                    />
+                    <Button variant="outline" className="w-full" onClick={handleDownload}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Transcription
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <Youtube className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Enter a YouTube URL and click transcribe to get started
+                      </p>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-64">
-                      <div className="text-center">
-                        <Youtube className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 dark:text-gray-400">
-                          Enter a YouTube URL and click transcribe to get started
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
 
-        {/* Chat Sidebar */}
-        <div className={`${showChatSidebar ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700`}>
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">AI Chat</h3>
-                <Button variant="ghost" size="sm" onClick={() => setShowChatSidebar(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+        {/* Chat Sidebar - Right Column */}
+        <div className="w-96 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold flex items-center">
+              <Bot className="h-5 w-5 mr-2 text-blue-600" />
+              AI Chat Assistant
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Ask questions about the video content
+            </p>
+          </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-                {messages.map((msg, index) => (
+          {/* Chat History */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium mb-2">Chat History</h4>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {chats.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => selectChat(chat)}
+                  className={`w-full text-left text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                    currentChat?.id === chat.id ? 'bg-blue-100 dark:bg-blue-900' : ''
+                  }`}
+                >
+                  {chat.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                  <Bot className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                  <p>Start a conversation about the video!</p>
+                </div>
+              ) : (
+                messages.map((msg, index) => (
                   <div key={index} className={`flex items-start space-x-2 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {msg.type === 'bot' && <Bot className="h-6 w-6 mt-1 text-blue-600" />}
+                    {msg.type === 'bot' && <Bot className="h-6 w-6 mt-1 text-blue-600 flex-shrink-0" />}
                     <div className={`max-w-[80%] p-3 rounded-lg ${
                       msg.type === 'user' 
                         ? 'bg-blue-600 text-white' 
@@ -323,39 +381,34 @@ const YouTubeTranscriber = () => {
                     }`}>
                       <p className="text-sm">{msg.text}</p>
                     </div>
-                    {msg.type === 'user' && <User className="h-6 w-6 mt-1 text-gray-600" />}
+                    {msg.type === 'user' && <User className="h-6 w-6 mt-1 text-gray-600 flex-shrink-0" />}
                   </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
+                ))
+              )}
+              <div ref={chatEndRef} />
             </div>
+          </div>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex space-x-2">
-                <Input
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Ask about the video..."
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                />
-                <Button onClick={sendMessage} size="sm">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+          {/* Chat Input */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex space-x-2">
+              <Input
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Ask about the video..."
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                className="flex-1"
+              />
+              <Button onClick={sendMessage} size="sm" disabled={!inputText.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
+            {error && (
+              <p className="text-red-500 text-xs mt-2">{error}</p>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Floating Chat Button */}
-      {!showChatSidebar && (
-        <Button
-          onClick={() => setShowChatSidebar(true)}
-          className="fixed bottom-6 right-6 rounded-full w-12 h-12 bg-blue-600 hover:bg-blue-700"
-        >
-          <MessageSquare className="h-6 w-6" />
-        </Button>
-      )}
     </div>
   );
 };
