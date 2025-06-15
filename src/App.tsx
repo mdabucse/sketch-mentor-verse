@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Landing from "./pages/Landing";
+import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
+import Documentation from "./pages/Documentation";
+import Integrations from "./pages/Integrations";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
@@ -14,7 +19,7 @@ import GraphVisualizer from "./pages/GraphVisualizer";
 import DocumentAnalyzer from "./pages/DocumentAnalyzer";
 import CanvasAI from "./pages/CanvasAI";
 import YouTubeTranscriber from "./pages/YouTubeTranscriber";
-import SettingsPage from "./pages/Settings"; // Import the new Settings page
+import SettingsPage from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +35,10 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Landing />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/documentation" element={<Documentation />} />
+              <Route path="/integrations" element={<Integrations />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/dashboard" element={

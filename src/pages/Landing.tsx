@@ -49,27 +49,6 @@ const Landing = () => {
     "Real-time problem solving support"
   ];
 
-  const testimonials = [
-    {
-      name: "Dr. Sarah Chen",
-      role: "Mathematics Professor",
-      content: "SketchMentor has revolutionized how I create educational content. The AI-generated videos save hours of preparation time.",
-      rating: 5
-    },
-    {
-      name: "Michael Rodriguez",
-      role: "High School Student",
-      content: "The handwriting recognition feature helped me understand calculus concepts I was struggling with for months.",
-      rating: 5
-    },
-    {
-      name: "Lisa Thompson",
-      role: "Online Tutor",
-      content: "My students are more engaged than ever. The interactive visualizations make complex topics accessible.",
-      rating: 5
-    }
-  ];
-
   const stats = [
     { number: "50K+", label: "Active Learners" },
     { number: "1M+", label: "Problems Solved" },
@@ -267,53 +246,6 @@ const Landing = () => {
         </div>
       </motion.section>
 
-      {/* Testimonials Section */}
-      <motion.section 
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900"
-      >
-        <div className="max-w-7xl mx-auto">
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-              Loved by Educators & Students
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              See what our community is saying about their SketchMentor experience.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div key={index} variants={itemVariants}>
-                <Card className="h-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardContent className="p-8">
-                    <div className="flex mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 mb-6 italic">
-                      "{testimonial.content}"
-                    </p>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        {testimonial.name}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {testimonial.role}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
       {/* CTA Section */}
       <motion.section 
         initial={{ opacity: 0 }}
@@ -373,10 +305,10 @@ const Landing = () => {
             <div>
               <h4 className="font-semibold mb-6 text-lg">Product</h4>
               <ul className="space-y-3 text-gray-400">
-                <li><Link to="#" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">API Documentation</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Integrations</Link></li>
+                <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/documentation" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link to="/integrations" className="hover:text-white transition-colors">Integrations</Link></li>
               </ul>
             </div>
             
