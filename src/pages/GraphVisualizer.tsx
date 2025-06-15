@@ -6,14 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { BarChart, Settings, RefreshCw } from 'lucide-react';
+import { BarChart, Settings, RefreshCw, Loader } from 'lucide-react';
 
 const GraphVisualizer = () => {
   const [equation, setEquation] = useState('y = sin(x)');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const updateGraph = () => {
-    // Logic to update the graph with the new equation
+  const updateGraph = async () => {
+    setIsLoading(true);
     console.log('Updating graph with equation:', equation);
+    
+    // Simulate graph generation/calculation time
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    setIsLoading(false);
   };
 
   return (
@@ -73,10 +79,20 @@ const GraphVisualizer = () => {
 
                 <Button 
                   onClick={updateGraph}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Update Graph
+                  {isLoading ? (
+                    <>
+                      <Loader className="h-4 w-4 mr-2 animate-spin" />
+                      Generating Graph...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Update Graph
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -91,16 +107,28 @@ const GraphVisualizer = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center min-h-[400px]">
-                    <div className="text-center">
-                      <BarChart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-400">
-                        2D Graph will be displayed here
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                        Currently showing: <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">{equation}</code>
-                      </p>
-                    </div>
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center min-h-[400px] relative">
+                    {isLoading ? (
+                      <div className="text-center">
+                        <Loader className="h-16 w-16 text-blue-600 mx-auto mb-4 animate-spin" />
+                        <p className="text-gray-600 dark:text-gray-400 mb-2">
+                          Generating graph...
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500">
+                          Processing: <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">{equation}</code>
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <BarChart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">
+                          2D Graph will be displayed here
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                          Currently showing: <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">{equation}</code>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
