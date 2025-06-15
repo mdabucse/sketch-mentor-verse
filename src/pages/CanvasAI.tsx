@@ -1,15 +1,21 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { Image, Download, RefreshCw, Eraser } from 'lucide-react';
+import { Image, Download, RefreshCw, Eraser, Pencil, Palette } from 'lucide-react';
 import { useUserActivities } from '@/hooks/useUserActivities';
 
 const CanvasAI = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentColor, setCurrentColor] = useState('#000000');
+  const [brushSize, setBrushSize] = useState(3);
+  const [tool, setTool] = useState<'pencil' | 'eraser'>('pencil');
   const { trackActivity } = useUserActivities();
 
   // Track page access when component mounts
@@ -27,6 +33,11 @@ const CanvasAI = () => {
 
   const stopDrawing = () => {
     setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.beginPath();
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -40,9 +51,10 @@ const CanvasAI = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    ctx.lineWidth = 3;
+    ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : currentColor;
+    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
 
     ctx.lineTo(x, y);
     ctx.stroke();
@@ -56,6 +68,8 @@ const CanvasAI = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
   const downloadCanvas = () => {
@@ -64,7 +78,7 @@ const CanvasAI = () => {
     const image = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = image;
-    link.download = 'canvas_image.png';
+    link.download = 'canvas_drawing.png';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -74,7 +88,6 @@ const CanvasAI = () => {
     setIsAnalyzing(true);
     console.log('Analyzing canvas content...');
     
-    // Track canvas usage activity
     trackActivity('canvas_used', { 
       action: 'analyze',
       timestamp: new Date().toISOString()
@@ -85,6 +98,18 @@ const CanvasAI = () => {
     
     setIsAnalyzing(false);
   };
+
+  const colors = ['#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080', '#ffc0cb'];
+
+  // Initialize canvas with white background
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -106,20 +131,103 @@ const CanvasAI = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Canvas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Drawing Tools */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle>Draw Your Equation</CardTitle>
-                <CardDescription>Draw an equation and let AI analyze it.</CardDescription>
+                <CardTitle className="flex items-center">
+                  <Palette className="h-5 w-5 mr-2 text-purple-600" />
+                  Drawing Tools
+                </CardTitle>
+                <CardDescription>Select your drawing tools and colors.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Tool Selection */}
+                <div className="space-y-2">
+                  <Label>Tool</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={tool === 'pencil' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTool('pencil')}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Pencil
+                    </Button>
+                    <Button
+                      variant={tool === 'eraser' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTool('eraser')}
+                    >
+                      <Eraser className="h-4 w-4 mr-2" />
+                      Eraser
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Brush Size */}
+                <div className="space-y-2">
+                  <Label>Brush Size: {brushSize}px</Label>
+                  <Input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Color Picker */}
+                <div className="space-y-2">
+                  <Label>Color</Label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        className={`w-8 h-8 rounded border-2 ${
+                          currentColor === color ? 'border-gray-800 dark:border-white' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setCurrentColor(color)}
+                      />
+                    ))}
+                  </div>
+                  <Input
+                    type="color"
+                    value={currentColor}
+                    onChange={(e) => setCurrentColor(e.target.value)}
+                    className="w-full h-10"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2">
+                  <Button variant="outline" onClick={clearCanvas} className="w-full">
+                    <Eraser className="h-4 w-4 mr-2" />
+                    Clear Canvas
+                  </Button>
+                  <Button onClick={downloadCanvas} className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Canvas */}
+            <Card className="bg-white dark:bg-gray-800 lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Drawing Canvas</CardTitle>
+                <CardDescription>Draw your equation or diagram here.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="relative">
                   <canvas
                     ref={canvasRef}
-                    width={500}
-                    height={300}
-                    className="border border-gray-300 dark:border-gray-700 rounded-md cursor-crosshair"
+                    width={600}
+                    height={400}
+                    className="border border-gray-300 dark:border-gray-700 rounded-md cursor-crosshair bg-white"
                     onMouseDown={startDrawing}
                     onMouseUp={stopDrawing}
                     onMouseOut={stopDrawing}
@@ -133,43 +241,29 @@ const CanvasAI = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex justify-between mt-4">
-                  <Button variant="outline" onClick={clearCanvas}>
-                    <Eraser className="h-4 w-4 mr-2" />
-                    Clear
-                  </Button>
-                  <Button onClick={analyzeCanvas} disabled={isAnalyzing}>
-                    {isAnalyzing ? (
-                      <>
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        Analyze
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Results */}
-            <Card className="bg-white dark:bg-gray-800">
-              <CardHeader>
-                <CardTitle>Analysis Result</CardTitle>
-                <CardDescription>AI analysis of your handwritten equation.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Analysis results will appear here.
-                </p>
-                <Button variant="secondary" className="mt-4 w-full" onClick={downloadCanvas}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Image
+                <Button 
+                  onClick={analyzeCanvas} 
+                  disabled={isAnalyzing}
+                  className="mt-4 w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                >
+                  {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
                 </Button>
               </CardContent>
             </Card>
           </div>
+
+          {/* Results Section */}
+          <Card className="mt-8 bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle>AI Analysis Results</CardTitle>
+              <CardDescription>AI interpretation of your drawing will appear here.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 dark:text-gray-400">
+                Draw something on the canvas and click "Analyze with AI" to see the results.
+              </p>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </div>
