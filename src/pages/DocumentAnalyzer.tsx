@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,11 +6,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { FileText, Upload, BookOpen, Brain, Download } from 'lucide-react';
+import { useUserActivities } from '@/hooks/useUserActivities';
 
 const DocumentAnalyzer = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const { trackActivity } = useUserActivities();
+
+  // Track page access when component mounts
+  useEffect(() => {
+    trackActivity('page_visited', { 
+      page: 'Document Analyzer',
+      timestamp: new Date().toISOString()
+    });
+  }, [trackActivity]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -21,7 +30,17 @@ const DocumentAnalyzer = () => {
   };
 
   const analyzeDocument = async () => {
+    if (!uploadedFile) return;
+    
     setIsAnalyzing(true);
+    console.log('Analyzing document:', uploadedFile.name);
+    
+    // Track document analysis activity
+    trackActivity('document_analyzed', { 
+      filename: uploadedFile.name,
+      timestamp: new Date().toISOString()
+    });
+    
     // Simulate analysis
     setTimeout(() => {
       setAnalysisResults({

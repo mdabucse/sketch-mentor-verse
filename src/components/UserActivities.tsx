@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUserActivities } from '@/hooks/useUserActivities';
-import { Clock, Video, BarChart, FileText, Image, Youtube, User, Globe, Download, AlertCircle, CheckCircle } from 'lucide-react';
+import { Clock, Video, BarChart, FileText, Image, Youtube, Globe, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const getActivityIcon = (activityType: string) => {
@@ -9,9 +9,8 @@ const getActivityIcon = (activityType: string) => {
     case 'video_generated':
     case 'video_generation_started':
     case 'video_downloaded':
-      return Video;
     case 'video_generation_failed':
-      return AlertCircle;
+      return Video;
     case 'graph_visualized':
       return BarChart;
     case 'document_analyzed':
@@ -20,12 +19,28 @@ const getActivityIcon = (activityType: string) => {
       return Image;
     case 'youtube_transcribed':
       return Youtube;
-    case 'login':
-      return User;
     case 'page_visited':
-      return Globe;
+      return getPageIcon;
     default:
       return Clock;
+  }
+};
+
+const getPageIcon = (details: any) => {
+  const page = details?.page?.toLowerCase();
+  switch (page) {
+    case 'video generator':
+      return Video;
+    case 'graph visualizer':
+      return BarChart;
+    case 'document analyzer':
+      return FileText;
+    case 'canvas ai':
+      return Image;
+    case 'youtube transcriber':
+      return Youtube;
+    default:
+      return Globe;
   }
 };
 
@@ -46,12 +61,28 @@ const getActivityColor = (activityType: string) => {
       return 'text-purple-600';
     case 'youtube_transcribed':
       return 'text-orange-600';
-    case 'login':
-      return 'text-gray-600';
     case 'page_visited':
-      return 'text-indigo-600';
+      return getPageColor;
     default:
       return 'text-gray-500';
+  }
+};
+
+const getPageColor = (details: any) => {
+  const page = details?.page?.toLowerCase();
+  switch (page) {
+    case 'video generator':
+      return 'text-red-600';
+    case 'graph visualizer':
+      return 'text-blue-600';
+    case 'document analyzer':
+      return 'text-green-600';
+    case 'canvas ai':
+      return 'text-purple-600';
+    case 'youtube transcriber':
+      return 'text-orange-600';
+    default:
+      return 'text-indigo-600';
   }
 };
 
@@ -66,17 +97,15 @@ const formatActivityTitle = (activityType: string, details: any) => {
     case 'video_downloaded':
       return 'Downloaded Video';
     case 'graph_visualized':
-      return details?.function || 'Graph Visualized';
+      return 'Visualized Graph';
     case 'document_analyzed':
-      return details?.filename || 'Document Analyzed';
+      return details?.filename ? `Analyzed ${details.filename}` : 'Document Analyzed';
     case 'canvas_used':
-      return 'Canvas AI Used';
+      return 'Used Canvas AI';
     case 'youtube_transcribed':
       return details?.title || 'YouTube Video Transcribed';
-    case 'login':
-      return 'Logged In';
     case 'page_visited':
-      return `Visited ${details?.page || 'Page'}`;
+      return `Opened ${details?.page || 'Feature'}`;
     default:
       return 'Activity';
   }
@@ -85,7 +114,6 @@ const formatActivityTitle = (activityType: string, details: any) => {
 const getActivityDescription = (activityType: string, details: any) => {
   switch (activityType) {
     case 'video_generated':
-      return details?.prompt ? `"${details.prompt.slice(0, 60)}${details.prompt.length > 60 ? '...' : ''}"` : '';
     case 'video_generation_started':
       return details?.prompt ? `"${details.prompt.slice(0, 60)}${details.prompt.length > 60 ? '...' : ''}"` : '';
     case 'video_generation_failed':
@@ -93,7 +121,9 @@ const getActivityDescription = (activityType: string, details: any) => {
     case 'graph_visualized':
       return details?.function ? `Function: ${details.function}` : '';
     case 'document_analyzed':
-      return details?.filename ? `File: ${details.filename}` : '';
+      return 'Generated quizzes and study materials';
+    case 'page_visited':
+      return `Accessed ${details?.page || 'feature'}`;
     default:
       return '';
   }
@@ -108,7 +138,7 @@ export const UserActivities = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Clock className="h-5 w-5 mr-2" />
-            Recent Activity
+            Recently Accessed
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -130,7 +160,7 @@ export const UserActivities = () => {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Clock className="h-5 w-5 mr-2" />
-          Recent Activity
+          Recently Accessed
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -139,28 +169,36 @@ export const UserActivities = () => {
             <p className="text-gray-500 text-sm">No activities yet. Start using the tools to see your activity history!</p>
           ) : (
             activities.map((activity) => {
-              const Icon = getActivityIcon(activity.activity_type);
-              const colorClass = getActivityColor(activity.activity_type);
+              let Icon, colorClass;
+              
+              if (activity.activity_type === 'page_visited') {
+                Icon = getPageIcon(activity.details);
+                colorClass = getPageColor(activity.details);
+              } else {
+                Icon = getActivityIcon(activity.activity_type);
+                colorClass = getActivityColor(activity.activity_type);
+              }
+              
               const title = formatActivityTitle(activity.activity_type, activity.details);
               const description = getActivityDescription(activity.activity_type, activity.details);
               
               return (
-                <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Icon className={`h-5 w-5 ${colorClass}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">
-                        {title}
+                <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  <div className={`flex-shrink-0 w-12 h-12 rounded-lg bg-white dark:bg-gray-800 shadow-sm border flex items-center justify-center`}>
+                    <Icon className={`h-6 w-6 ${colorClass}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                      {title}
+                    </p>
+                    {description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {description}
                       </p>
-                      {description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                          {description}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
-                        {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                      </p>
-                    </div>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                    </p>
                   </div>
                 </div>
               );

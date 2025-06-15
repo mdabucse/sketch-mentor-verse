@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +16,13 @@ const Dashboard = () => {
   const { trackActivity } = useUserActivities();
   const [showTutorial, setShowTutorial] = useState(false);
 
-  // Track login activity when dashboard loads
+  // Track dashboard page visit when component loads
   useEffect(() => {
     if (currentUser) {
-      trackActivity('login', { timestamp: new Date().toISOString() });
+      trackActivity('page_visited', { 
+        page: 'Dashboard',
+        timestamp: new Date().toISOString()
+      });
       
       // Check if this is a new user (first time visiting dashboard)
       const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${currentUser.uid}`);
