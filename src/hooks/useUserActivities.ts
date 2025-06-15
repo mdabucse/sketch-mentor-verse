@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +13,9 @@ export const useUserActivities = () => {
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
+
+  // Keep track of recently tracked page visits to prevent duplicates
+  const recentPageVisits = new Map<string, number>();
 
   // Fetch user activities
   const fetchActivities = async () => {
@@ -39,6 +41,21 @@ export const useUserActivities = () => {
   // Track a new activity
   const trackActivity = async (activityType: string, details: any = {}) => {
     if (!currentUser) return;
+
+    // For page visits, check if we've tracked this page recently (within 5 minutes)
+    if (activityType === 'page_visited' && details.page) {
+      const pageKey = details.page;
+      const now = Date.now();
+      const lastVisit = recentPageVisits.get(pageKey);
+      
+      // If visited within 5 minutes, don't track again
+      if (lastVisit && (now - lastVisit) < 5 * 60 * 1000) {
+        return;
+      }
+      
+      // Update the last visit time
+      recentPageVisits.set(pageKey, now);
+    }
 
     try {
       const { error } = await supabase
