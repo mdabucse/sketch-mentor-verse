@@ -10,10 +10,11 @@ import TutorialPopup from '../components/TutorialPopup';
 import { motion } from 'framer-motion';
 import { Video, BarChart, FileText, Image, Plus, Clock, BookOpen, Youtube } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
-  const { trackActivity } = useUserActivities();
+  const { trackActivity, activities } = useUserActivities();
   const [showTutorial, setShowTutorial] = useState(false);
 
   // Track dashboard page visit when component loads
@@ -39,6 +40,20 @@ const Dashboard = () => {
     }
   };
 
+  // Function to get last access time for a feature
+  const getLastAccessTime = (featurePage: string) => {
+    const pageActivity = activities.find(activity => 
+      activity.activity_type === 'page_visited' && 
+      activity.details?.page === featurePage
+    );
+    
+    if (pageActivity) {
+      return formatDistanceToNow(new Date(pageActivity.timestamp), { addSuffix: true });
+    }
+    
+    return 'Never used';
+  };
+
   const features = [
     {
       title: 'Video Generator',
@@ -46,7 +61,7 @@ const Dashboard = () => {
       icon: Video,
       href: '/video-generator',
       color: 'from-red-500 to-pink-500',
-      recent: 'Last used 2 hours ago'
+      page: 'Video Generator'
     },
     {
       title: 'Graph Visualizer',
@@ -54,7 +69,7 @@ const Dashboard = () => {
       icon: BarChart,
       href: '/graph-visualizer',
       color: 'from-blue-500 to-cyan-500',
-      recent: 'Never used'
+      page: 'Graph Visualizer'
     },
     {
       title: 'Document Analyzer',
@@ -62,7 +77,7 @@ const Dashboard = () => {
       icon: FileText,
       href: '/document-analyzer',
       color: 'from-green-500 to-emerald-500',
-      recent: 'Last used yesterday'
+      page: 'Document Analyzer'
     },
     {
       title: 'Canvas AI',
@@ -70,7 +85,7 @@ const Dashboard = () => {
       icon: Image,
       href: '/canvas-ai',
       color: 'from-purple-500 to-indigo-500',
-      recent: 'Never used'
+      page: 'Canvas AI'
     },
     {
       title: 'YouTube Transcriber',
@@ -78,7 +93,7 @@ const Dashboard = () => {
       icon: Youtube,
       href: '/youtube-transcriber',
       color: 'from-orange-500 to-red-500',
-      recent: 'Never used'
+      page: 'YouTube Transcriber'
     }
   ];
 
@@ -123,7 +138,7 @@ const Dashboard = () => {
                     <CardContent>
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <Clock className="h-4 w-4 mr-1" />
-                        {feature.recent}
+                        {getLastAccessTime(feature.page)}
                       </div>
                     </CardContent>
                   </Card>
