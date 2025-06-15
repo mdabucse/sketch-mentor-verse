@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,11 +6,21 @@ import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { Play, Download, Wand2, Video, Sparkles, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUserActivities } from '@/hooks/useUserActivities';
 
 const VideoGenerator = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const { trackActivity } = useUserActivities();
+
+  // Track page access when component mounts
+  useEffect(() => {
+    trackActivity('page_visited', { 
+      page: 'Video Generator',
+      timestamp: new Date().toISOString()
+    });
+  }, [trackActivity]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -21,6 +30,12 @@ const VideoGenerator = () => {
     
     setIsGenerating(true);
     setVideoUrl('');
+
+    // Track video generation attempt
+    trackActivity('video_generation_started', { 
+      prompt: prompt.slice(0, 100) + (prompt.length > 100 ? '...' : ''),
+      timestamp: new Date().toISOString()
+    });
 
     try {
       // Replace this URL with your actual video generation API endpoint
@@ -46,6 +61,14 @@ const VideoGenerator = () => {
       if (data.videoUrl || data.video_url || data.url) {
         const generatedVideoUrl = data.videoUrl || data.video_url || data.url;
         setVideoUrl(generatedVideoUrl);
+        
+        // Track successful video generation
+        trackActivity('video_generated', { 
+          title: prompt.slice(0, 50) + (prompt.length > 50 ? '...' : ''),
+          prompt: prompt,
+          timestamp: new Date().toISOString()
+        });
+        
         toast.success('Video generated successfully!');
       } else {
         throw new Error('No video URL found in API response');
@@ -53,6 +76,14 @@ const VideoGenerator = () => {
 
     } catch (error) {
       console.error('Error generating video:', error);
+      
+      // Track failed video generation
+      trackActivity('video_generation_failed', { 
+        prompt: prompt.slice(0, 100) + (prompt.length > 100 ? '...' : ''),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+      
       toast.error(error instanceof Error ? error.message : 'Failed to generate video. Please try again.');
     } finally {
       setIsGenerating(false);
@@ -61,6 +92,12 @@ const VideoGenerator = () => {
 
   const handleDownload = () => {
     if (videoUrl) {
+      // Track video download
+      trackActivity('video_downloaded', { 
+        title: prompt.slice(0, 50) + (prompt.length > 50 ? '...' : ''),
+        timestamp: new Date().toISOString()
+      });
+      
       const link = document.createElement('a');
       link.href = videoUrl;
       link.download = 'generated-video.mp4';

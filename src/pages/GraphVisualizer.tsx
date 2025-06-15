@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,14 +7,30 @@ import { Label } from '@/components/ui/label';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { BarChart, Settings, RefreshCw, Loader } from 'lucide-react';
+import { useUserActivities } from '@/hooks/useUserActivities';
 
 const GraphVisualizer = () => {
   const [equation, setEquation] = useState('y = sin(x)');
   const [isLoading, setIsLoading] = useState(false);
+  const { trackActivity } = useUserActivities();
+
+  // Track page access when component mounts
+  useEffect(() => {
+    trackActivity('page_visited', { 
+      page: 'Graph Visualizer',
+      timestamp: new Date().toISOString()
+    });
+  }, [trackActivity]);
 
   const updateGraph = async () => {
     setIsLoading(true);
     console.log('Updating graph with equation:', equation);
+    
+    // Track graph visualization activity
+    trackActivity('graph_visualized', { 
+      function: equation,
+      timestamp: new Date().toISOString()
+    });
     
     // Simulate graph generation/calculation time
     await new Promise(resolve => setTimeout(resolve, 2000));

@@ -1,13 +1,17 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUserActivities } from '@/hooks/useUserActivities';
-import { Clock, Video, BarChart, FileText, Image, Youtube, User } from 'lucide-react';
+import { Clock, Video, BarChart, FileText, Image, Youtube, User, Globe, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const getActivityIcon = (activityType: string) => {
   switch (activityType) {
     case 'video_generated':
+    case 'video_generation_started':
+    case 'video_downloaded':
       return Video;
+    case 'video_generation_failed':
+      return AlertCircle;
     case 'graph_visualized':
       return BarChart;
     case 'document_analyzed':
@@ -18,6 +22,8 @@ const getActivityIcon = (activityType: string) => {
       return Youtube;
     case 'login':
       return User;
+    case 'page_visited':
+      return Globe;
     default:
       return Clock;
   }
@@ -26,6 +32,11 @@ const getActivityIcon = (activityType: string) => {
 const getActivityColor = (activityType: string) => {
   switch (activityType) {
     case 'video_generated':
+    case 'video_downloaded':
+      return 'text-green-600';
+    case 'video_generation_started':
+      return 'text-blue-600';
+    case 'video_generation_failed':
       return 'text-red-600';
     case 'graph_visualized':
       return 'text-blue-600';
@@ -37,6 +48,8 @@ const getActivityColor = (activityType: string) => {
       return 'text-orange-600';
     case 'login':
       return 'text-gray-600';
+    case 'page_visited':
+      return 'text-indigo-600';
     default:
       return 'text-gray-500';
   }
@@ -46,6 +59,12 @@ const formatActivityTitle = (activityType: string, details: any) => {
   switch (activityType) {
     case 'video_generated':
       return details?.title || 'Video Generated';
+    case 'video_generation_started':
+      return 'Started Video Generation';
+    case 'video_generation_failed':
+      return 'Video Generation Failed';
+    case 'video_downloaded':
+      return 'Downloaded Video';
     case 'graph_visualized':
       return details?.function || 'Graph Visualized';
     case 'document_analyzed':
@@ -56,8 +75,27 @@ const formatActivityTitle = (activityType: string, details: any) => {
       return details?.title || 'YouTube Video Transcribed';
     case 'login':
       return 'Logged In';
+    case 'page_visited':
+      return `Visited ${details?.page || 'Page'}`;
     default:
       return 'Activity';
+  }
+};
+
+const getActivityDescription = (activityType: string, details: any) => {
+  switch (activityType) {
+    case 'video_generated':
+      return details?.prompt ? `"${details.prompt.slice(0, 60)}${details.prompt.length > 60 ? '...' : ''}"` : '';
+    case 'video_generation_started':
+      return details?.prompt ? `"${details.prompt.slice(0, 60)}${details.prompt.length > 60 ? '...' : ''}"` : '';
+    case 'video_generation_failed':
+      return details?.error ? `Error: ${details.error.slice(0, 50)}${details.error.length > 50 ? '...' : ''}` : '';
+    case 'graph_visualized':
+      return details?.function ? `Function: ${details.function}` : '';
+    case 'document_analyzed':
+      return details?.filename ? `File: ${details.filename}` : '';
+    default:
+      return '';
   }
 };
 
@@ -104,16 +142,22 @@ export const UserActivities = () => {
               const Icon = getActivityIcon(activity.activity_type);
               const colorClass = getActivityColor(activity.activity_type);
               const title = formatActivityTitle(activity.activity_type, activity.details);
+              const description = getActivityDescription(activity.activity_type, activity.details);
               
               return (
                 <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Icon className={`h-5 w-5 ${colorClass}`} />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
                         {title}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          {description}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
                         {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                       </p>
                     </div>
