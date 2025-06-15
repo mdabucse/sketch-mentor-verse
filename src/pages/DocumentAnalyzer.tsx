@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import { FileText, Upload, BookOpen, Brain, Download } from 'lucide-react';
@@ -147,89 +148,108 @@ const DocumentAnalyzer = () => {
               )}
 
               {analysisResults && (
-                <>
-                  {/* Generated Quizzes */}
-                  <Card className="bg-white dark:bg-gray-800">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Brain className="h-5 w-5 mr-2" />
-                        Generated Quizzes
-                      </CardTitle>
-                      <CardDescription>
-                        {analysisResults.quizzes.length} questions extracted from your document
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {analysisResults.quizzes.map((quiz: any, index: number) => (
-                          <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <p className="font-medium mb-3">{quiz.question}</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              {quiz.options.map((option: string, optIndex: number) => (
-                                <Badge
-                                  key={optIndex}
-                                  variant={optIndex === quiz.correct ? "default" : "outline"}
-                                  className="justify-start p-2"
-                                >
-                                  {option}
-                                </Badge>
-                              ))}
+                <Card className="bg-white dark:bg-gray-800">
+                  <CardHeader>
+                    <CardTitle>Analysis Results</CardTitle>
+                    <CardDescription>
+                      AI-generated study materials from your document
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="quizzes" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="quizzes" className="flex items-center">
+                          <Brain className="h-4 w-4 mr-2" />
+                          Quizzes
+                        </TabsTrigger>
+                        <TabsTrigger value="flashcards" className="flex items-center">
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Flashcards
+                        </TabsTrigger>
+                        <TabsTrigger value="studypath" className="flex items-center">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Study Path
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="quizzes" className="mt-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Generated Quizzes</h3>
+                            <Badge variant="secondary">{analysisResults.quizzes.length} questions</Badge>
+                          </div>
+                          {analysisResults.quizzes.map((quiz: any, index: number) => (
+                            <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                              <p className="font-medium mb-3">{quiz.question}</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {quiz.options.map((option: string, optIndex: number) => (
+                                  <Badge
+                                    key={optIndex}
+                                    variant={optIndex === quiz.correct ? "default" : "outline"}
+                                    className="justify-start p-2"
+                                  >
+                                    {option}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
+                          ))}
+                          <Button className="w-full" variant="outline">
+                            <Download className="h-4 w-4 mr-2" />
+                            Export Quizzes
+                          </Button>
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="flashcards" className="mt-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Flashcards</h3>
+                            <Badge variant="secondary">{analysisResults.flashcards.length} cards</Badge>
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Flashcards */}
-                  <Card className="bg-white dark:bg-gray-800">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <BookOpen className="h-5 w-5 mr-2" />
-                        Flashcards
-                      </CardTitle>
-                      <CardDescription>
-                        Key concepts extracted for quick review
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {analysisResults.flashcards.map((card: any, index: number) => (
-                          <div key={index} className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
-                            <div className="font-semibold mb-2">{card.front}</div>
-                            <div className="text-sm opacity-90">{card.back}</div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {analysisResults.flashcards.map((card: any, index: number) => (
+                              <div key={index} className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
+                                <div className="font-semibold mb-2">{card.front}</div>
+                                <div className="text-sm opacity-90">{card.back}</div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Study Path */}
-                  <Card className="bg-white dark:bg-gray-800">
-                    <CardHeader>
-                      <CardTitle>Personalized Study Path</CardTitle>
-                      <CardDescription>
-                        Recommended learning sequence based on your document
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {analysisResults.studyPath.map((step: string, index: number) => (
-                          <div key={index} className="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                            <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center mr-3 text-sm font-bold">
-                              {index + 1}
-                            </div>
-                            <span>{step}</span>
+                          <Button className="w-full" variant="outline">
+                            <Download className="h-4 w-4 mr-2" />
+                            Export Flashcards
+                          </Button>
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="studypath" className="mt-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Personalized Study Path</h3>
+                            <Badge variant="secondary">{analysisResults.studyPath.length} steps</Badge>
                           </div>
-                        ))}
-                      </div>
-                      <Button className="w-full mt-4" variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export Study Materials
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Recommended learning sequence based on your document
+                          </p>
+                          <div className="space-y-3">
+                            {analysisResults.studyPath.map((step: string, index: number) => (
+                              <div key={index} className="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                                  {index + 1}
+                                </div>
+                                <span>{step}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <Button className="w-full" variant="outline">
+                            <Download className="h-4 w-4 mr-2" />
+                            Export Study Path
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </div>
