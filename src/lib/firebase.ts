@@ -3,12 +3,13 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBbSWhxS-8S_bXKBo2krvKLLBMTXV_JYpo",
-  authDomain: "ai-math-tutor-8a0b7.firebaseapp.com",
-  projectId: "ai-math-tutor-8a0b7",
-  storageBucket: "ai-math-tutor-8a0b7.appspot.com",
-  messagingSenderId: "889171754251",
-  appId: "1:889171754251:web:e31ab803afa3ab5e9bf60e"
+  apiKey: "AIzaSyCFqHwNqGk0Utiq2umPZ9hKny2ZnVNuci4",
+  authDomain: "sketchmentor-6ec65.firebaseapp.com",
+  projectId: "sketchmentor-6ec65",
+  storageBucket: "sketchmentor-6ec65.firebasestorage.app",
+  messagingSenderId: "984767234188",
+  appId: "1:984767234188:web:7185264863e5d6eb3d3ba9",
+  measurementId: "G-5LQ0VJCPGH"
 };
 
 // Initialize Firebase only if no apps exist
