@@ -1,198 +1,324 @@
 
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Navigation from '../components/Navigation';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Puzzle, Zap, Star, Globe, Smartphone, Monitor, Cloud } from 'lucide-react';
+import { Image, Download, RefreshCw, Eraser, Pencil, Palette } from 'lucide-react';
+import { useUserActivities } from '@/hooks/useUserActivities';
 
-const Integrations = () => {
-  const integrationCategories = [
-    {
-      icon: Globe,
-      title: "Learning Management Systems",
-      description: "Seamlessly integrate with popular LMS platforms",
-      integrations: ["Canvas", "Blackboard", "Moodle", "Google Classroom"],
-      status: "coming-soon"
-    },
-    {
-      icon: Cloud,
-      title: "Cloud Storage",
-      description: "Connect with your favorite cloud storage providers",
-      integrations: ["Google Drive", "Dropbox", "OneDrive", "iCloud"],
-      status: "coming-soon"
-    },
-    {
-      icon: Monitor,
-      title: "Video Platforms",
-      description: "Import and export content from video platforms",
-      integrations: ["YouTube", "Vimeo", "Kaltura", "Panopto"],
-      status: "coming-soon"
-    },
-    {
-      icon: Smartphone,
-      title: "Communication Tools",
-      description: "Stay connected with messaging and communication apps",
-      integrations: ["Slack", "Microsoft Teams", "Discord", "Zoom"],
-      status: "coming-soon"
+const CanvasAI = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentColor, setCurrentColor] = useState('#000000');
+  const [brushSize, setBrushSize] = useState(3);
+  const [tool, setTool] = useState<'pencil' | 'eraser'>('pencil');
+  const { trackActivity } = useUserActivities();
+  const [analysisResult, setAnalysisResult] = useState('');
+
+
+  // Track page access when component mounts
+  useEffect(() => {
+    trackActivity('page_visited', { 
+      page: 'Canvas AI',
+      timestamp: new Date().toISOString()
+    });
+  }, [trackActivity]);
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    draw(e);
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.beginPath();
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : currentColor;
+    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const downloadCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const image = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = image;
+    link.download = 'canvas_drawing.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const analyzeCanvas = async () => {
+  setIsAnalyzing(true);
+  setAnalysisResult("Analyzing...");
+
+  trackActivity('canvas_used', {
+    action: 'analyze',
+    timestamp: new Date().toISOString()
+  });
+
+  const canvas = canvasRef.current;
+  if (!canvas) {
+    setIsAnalyzing(false);
+    setAnalysisResult("Canvas not available.");
+    return;
+  }
+
+  const imageData = canvas.toDataURL('image/png');
+
+  if (!imageData.startsWith('data:image/png;base64,')) {
+    setIsAnalyzing(false);
+    setAnalysisResult("Invalid image format.");
+    return;
+  }
+
+  try {
+    const response = await fetch('http://67.202.51.138:8000/calculate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        image: imageData,
+        dict_of_vars: {}  // ✅ required field for FastAPI model
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Backend error: ${errorText}`);
     }
-  ];
+
+    const data = await response.json();
+    if (data?.data?.length) {
+    const interpretations = data.data
+      .map((item: any) => `${item.expr} → ${item.result}`)
+      .join('\n');
+    setAnalysisResult(interpretations);
+} else {
+  setAnalysisResult("No result received.");
+}
+
+  } catch (error: any) {
+    console.error('Error analyzing canvas:', error);
+    setAnalysisResult(`Error: ${error.message}`);
+  }
+
+  setIsAnalyzing(false);
+};
+
+
+
+
+  const colors = ['#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080', '#ffc0cb'];
+
+  // Initialize canvas with white background
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
-      <Navigation />
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <Sidebar />
       
-      <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Back Button */}
-          <Link to="/">
-            <Button variant="ghost" className="mb-8">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Button>
-          </Link>
-
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Integrations
-              </span>
+      <div className="flex-1 overflow-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-8"
+        >
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
+              <Image className="h-8 w-8 mr-3 text-purple-600" />
+              Canvas AI
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-              Connect SketchMentor with your favorite tools and platforms to create a seamless learning ecosystem.
+            <p className="text-gray-600 dark:text-gray-400">
+              Draw and analyze handwritten equations with AI.
             </p>
-            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-full">
-              <Star className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" />
-              <span className="text-purple-700 dark:text-purple-300 font-medium">Integrations Coming Soon</span>
-            </div>
-          </motion.div>
+          </div>
 
-          {/* Coming Soon Notice */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mb-16"
-          >
-            <Card className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-0 shadow-2xl">
-              <CardContent className="p-12 text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-white/20 rounded-full flex items-center justify-center">
-                  <Puzzle className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold mb-4">Powerful Integrations in Development</h2>
-                <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
-                  We're building seamless integrations with the tools you already use. Connect SketchMentor 
-                  to your existing workflow and supercharge your learning experience.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-white/10 rounded-lg p-4">
-                    <Zap className="h-6 w-6 mx-auto mb-2" />
-                    <p className="text-sm">One-Click Setup</p>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-4">
-                    <Globe className="h-6 w-6 mx-auto mb-2" />
-                    <p className="text-sm">Cross-Platform Sync</p>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-4">
-                    <Star className="h-6 w-6 mx-auto mb-2" />
-                    <p className="text-sm">Enterprise Ready</p>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link to="/signup">
-                    <Button size="lg" variant="secondary" className="text-lg px-8 py-4 bg-white text-purple-600 hover:bg-gray-100">
-                      Get Early Access
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Drawing Tools */}
+            <Card className="bg-white dark:bg-gray-800">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Palette className="h-5 w-5 mr-2 text-purple-600" />
+                  Drawing Tools
+                </CardTitle>
+                <CardDescription>Select your drawing tools and colors.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Tool Selection */}
+                <div className="space-y-2">
+                  <Label>Tool</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={tool === 'pencil' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTool('pencil')}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Pencil
                     </Button>
-                  </Link>
-                  <Button size="lg" variant="outline" className="text-lg px-8 py-4 text-white border-white hover:bg-white/10">
-                    Request Integration
+                    <Button
+                      variant={tool === 'eraser' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTool('eraser')}
+                    >
+                      <Eraser className="h-4 w-4 mr-2" />
+                      Eraser
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Brush Size */}
+                <div className="space-y-2">
+                  <Label>Brush Size: {brushSize}px</Label>
+                  <Input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Color Picker */}
+                <div className="space-y-2">
+                  <Label>Color</Label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        className={`w-8 h-8 rounded border-2 ${
+                          currentColor === color ? 'border-gray-800 dark:border-white' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setCurrentColor(color)}
+                      />
+                    ))}
+                  </div>
+                  <Input
+                    type="color"
+                    value={currentColor}
+                    onChange={(e) => setCurrentColor(e.target.value)}
+                    className="w-full h-10"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2">
+                  <Button variant="outline" onClick={clearCanvas} className="w-full">
+                    <Eraser className="h-4 w-4 mr-2" />
+                    Clear Canvas
+                  </Button>
+                  <Button onClick={downloadCanvas} className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
 
-          {/* Integration Categories */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-              Planned Integrations
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {integrationCategories.map((category, index) => (
-                <motion.div
-                  key={category.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <Card className="h-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 relative">
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                      Coming Soon
-                    </div>
-                    <CardHeader className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center opacity-70">
-                        <category.icon className="h-8 w-8 text-white" />
+            {/* Canvas */}
+            <Card className="bg-white dark:bg-gray-800 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Drawing Canvas</CardTitle>
+                <CardDescription>Draw your equation or diagram here.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative w-full max-w-4xl">
+                    <canvas
+                      ref={canvasRef}
+                      width={800}
+                      height={500}
+                      className="border border-gray-300 dark:border-gray-700 rounded-md cursor-crosshair bg-white w-full h-auto max-w-full shadow-lg"
+                      onMouseDown={startDrawing}
+                      onMouseUp={stopDrawing}
+                      onMouseOut={stopDrawing}
+                      onMouseMove={draw}
+                    />
+                    {isAnalyzing && (
+                      <div className="absolute inset-0 bg-gray-100 dark:bg-gray-700 bg-opacity-50 flex items-center justify-center rounded-md">
+                        <p className="text-lg text-gray-600 dark:text-gray-400 animate-pulse">
+                          Analyzing...
+                        </p>
                       </div>
-                      <CardTitle className="text-xl">{category.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
-                        {category.description}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {category.integrations.map((integration, idx) => (
-                          <div key={idx} className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2 text-center text-sm opacity-70">
-                            {integration}
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* API Section */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-16"
-          >
-            <Card className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-              <CardContent className="p-12 text-center">
-                <h2 className="text-3xl font-bold mb-4">Custom Integrations</h2>
-                <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                  Need a custom integration? Our API will allow developers to build powerful connections 
-                  between SketchMentor and any platform or service.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link to="/documentation">
-                    <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
-                      View API Docs
-                    </Button>
-                  </Link>
-                  <Button size="lg" variant="outline" className="text-lg px-8 py-4 text-white border-white hover:bg-white/10">
-                    Contact Developer Team
+                    )}
+                  </div>
+                  <Button 
+                    onClick={analyzeCanvas} 
+                    disabled={isAnalyzing}
+                    className="w-full max-w-md bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        </div>
+          </div>
+
+          {/* Results Section */}
+          <Card className="mt-8 bg-white dark:bg-gray-800">
+            <CardHeader>
+              <CardTitle>AI Analysis Results</CardTitle>
+              <CardDescription>AI interpretation of your drawing will appear here.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {analysisResult || 'Draw something on the canvas and click "Analyze with AI" to see the results.'}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );
 };
 
-export default Integrations;
+export default CanvasAI;
